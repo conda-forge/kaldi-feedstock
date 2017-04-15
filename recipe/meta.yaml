@@ -16,19 +16,19 @@ source:
     - conda-kaldi.patch
 
 build:
-  number: 0
+  number: 1
   skip: true  # [not linux]
     
 requirements:
   build:
     - gcc >=4.8.5
     - openfst
-    - openblas
+    - openblas 0.2.19|0.2.19.*
     - speex
   run:
     - libgcc >=4.8.5
     - openfst
-    - openblas
+    - openblas 0.2.19|0.2.19.*
     - speex
     
 about:
