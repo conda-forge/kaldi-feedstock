@@ -8,7 +8,7 @@ package:
 source:
   fn: {{ version }}-{{ commit }}.tar.gz
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
-  sha256: 33d7ebbfb66f2271521bc51b49dc93dd5ec1704d9469aafe46e07b6e51de5d92
+  sha256: 70dd0dd1ca0b66a5c8726ea40861da001a721563c2984b55ea5c2c236e89e5c8
   patches:
     # Kaldi builds in place, so the patch makes just compilation of
     # the libraries in ${PREFIX}/lib; in addition, it contains sources
@@ -16,19 +16,19 @@ source:
     - conda-kaldi.patch
 
 build:
-  number: 1
+  number: 2
   skip: true  # [not linux]
     
 requirements:
   build:
     - gcc >=4.8.5
     - openfst
-    - openblas 0.2.19|0.2.19.*
+    - openblas 0.2.20|0.2.20.*
     - speex
   run:
     - libgcc >=4.8.5
     - openfst
-    - openblas 0.2.19|0.2.19.*
+    - openblas 0.2.20|0.2.20.*
     - speex
     
 about:
