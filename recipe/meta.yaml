@@ -16,21 +16,22 @@ source:
     - conda-kaldi.patch
 
 build:
-  number: 2
+  number: 3
   skip: true  # [not linux]
-    
+
 requirements:
   build:
-    - gcc >=4.8.5
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+  host:
     - openfst
-    - openblas 0.2.20|0.2.20.*
+    - openblas
     - speex
   run:
-    - libgcc >=4.8.5
     - openfst
-    - openblas 0.2.20|0.2.20.*
+    - openblas
     - speex
-    
+
 about:
   home: http://kaldi-asr.org/
   license: Apache-2.0
