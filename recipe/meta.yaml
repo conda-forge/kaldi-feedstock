@@ -21,13 +21,15 @@ build:
     
 requirements:
   build:
+    - {{ compiler('cxx') }}
+  host:
     - libblas
     - libcblas
-    - gcc >=4.8.5
     - openfst
     - speex
   run:
-    - libgcc >=4.8.5
+    - libblas
+    - libcblas
     - openfst
     - speex
     
