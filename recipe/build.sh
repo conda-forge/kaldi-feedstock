@@ -1,8 +1,14 @@
 #! /usr/bin/env bash
 
+pushd tools
+
+make cub openfst portaudio -k ${CPU_COUNT}
+
+popd
+
 pushd src
 
-./configure --shared --mathlib=OPENBLAS --openblas-root=${PREFIX} --fst-root=${PREFIX} --fst-version=1.6.1 --speex-root=${PREFIX} --use-cuda=no
+./configure --shared --mathlib=OPENBLAS --openblas-root=${PREFIX} --static-fst=yes --use-cuda=no
 make -j ${CPU_COUNT}
 
 # Move binaries
