@@ -8,9 +8,18 @@ cxx_compiler:
 - clangxx
 cxx_compiler_version:
 - '11'
-libblas:
-- 3.8 *netlib
 macos_machine:
 - x86_64-apple-darwin13.4.0
+openblas:
+- 0.3.*
+pin_run_as_build:
+  sox:
+    max_pin: x.x.x
+  zlib:
+    max_pin: x.x
+sox:
+- 14.4.2
 target_platform:
 - osx-64
+zlib:
+- '1.2'
