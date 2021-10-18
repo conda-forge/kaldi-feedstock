@@ -1,17 +1,12 @@
 #! /usr/bin/env bash
 
-pushd tools
+mkdir build
 
-make cub openfst portaudio -k ${CPU_COUNT}
+pushd build
 
-popd
 
-pushd src
+cmake -GNinja -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=${PREFIX}/lib -DCMAKE_INSTALL_PREFIX=${PREFIX}  -DKALDI_BUILD_TEST=OFF  -DMATHLIB=OpenBLAS -DBLAS_LIBRARIES=${PREFIX}/lib/libopenblas${SHLIB_EXT} -DLAPACK_LIBRARIES=${PREFIX}/lib/libopenblas${SHLIB_EXT} ..
 
-./configure --shared --mathlib=OPENBLAS --openblas-root=${PREFIX} --static-fst=yes --use-cuda=no
-make -j ${CPU_COUNT}
-
-# Move binaries
-find . -type f -executable -regex '.*bin/.*' -exec cp {} ${PREFIX}/bin \;
+cmake --build . --target install --config Release -- -j ${CPU_COUNT}
 
 popd

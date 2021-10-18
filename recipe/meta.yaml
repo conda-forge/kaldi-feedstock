@@ -17,13 +17,19 @@ build:
 requirements:
   build:
     - {{ compiler('cxx') }}
-    - make  # [unix]
-    - cmake  # [win]
-    - ninja  # [win]
+    - cmake
+    - make  # [not win]
+    - ninja
     - libtool  # [not win]
     - automake  # [not win]
   host:
-    - libblas
+    - openblas
+    - wget  # [not win]
+    - sox  # [not win]
+    - zlib # [not win]
+    - subversion # [not win]
+    - gfortran  # [not win]
+    - unzip  # [not win]
     
 about:
   home: http://kaldi-asr.org/
