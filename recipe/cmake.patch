@@ -1,14 +1,14 @@
-From bb31ab1cfcbe93679f5497ac99824e6c1ec853b8 Mon Sep 17 00:00:00 2001
+From af0430ee50271988aedc5b1e222d2b5b1c5692b9 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Mon, 18 Oct 2021 18:25:44 -0700
 Subject: [PATCH] Add flag for version so it's not computed from git history
 
 ---
- CMakeLists.txt | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ CMakeLists.txt | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a0b..5d28cc6ad 100644
+index 8b2de3a0b..337a6f26c 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -55,6 +55,7 @@ endif()
@@ -19,7 +19,7 @@ index 8b2de3a0b..5d28cc6ad 100644
 
  if (KALDI_BUILD_TEST)
      include(CTest)
-@@ -165,11 +166,13 @@ if(CUDA_FOUND)
+@@ -165,11 +166,14 @@ if(CUDA_FOUND)
  endif()
 
  add_definitions(-DKALDI_NO_PORTAUDIO=1)
@@ -35,6 +35,7 @@ index 8b2de3a0b..5d28cc6ad 100644
 +    get_version() # this will set KALDI_VERSION and KALDI_PATCH_NUMBER
 +    if(${KALDI_USE_PATCH_NUMBER})
 +        set(KALDI_VERSION "${KALDI_VERSION}.${KALDI_PATCH_NUMBER}")
++    endif()
  endif()
 
  # get_third_party(openfst)
