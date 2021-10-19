@@ -9,10 +9,11 @@ source:
   fn: {{ version }}-{{ commit }}.tar.gz
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
   sha256: 6235b76b4142e99afab5115472c7f77ebd65b9f01a5427ed57fa34ec63a77810
+  patches:
+    - cmake.patch
 
 build:
-  number: 0
-  skip: true  # [win]
+  number: 1
     
 requirements:
   build:
@@ -26,8 +27,8 @@ requirements:
     - openblas
     - wget  # [not win]
     - sox  # [not win]
-    - zlib # [not win]
-    - subversion # [not win]
+    - zlib  # [not win]
+    - subversion  # [not win]
     - gfortran  # [not win]
     - unzip  # [not win]
     
