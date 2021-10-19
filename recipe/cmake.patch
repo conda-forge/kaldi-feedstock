@@ -1,14 +1,14 @@
-From 369f171d1616fe9f6f33f5564cef1621d88b29d8 Mon Sep 17 00:00:00 2001
+From 9302451579a0beda7558c17aab4ffbcd30b38599 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Tue, 19 Oct 2021 14:14:45 -0700
 Subject: [PATCH] Patch CMakeLists.txt to allow for external version
 
 ---
- CMakeLists.txt | 13 +++++++++----
- 1 file changed, 9 insertions(+), 4 deletions(-)
+ CMakeLists.txt | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..9a40d63 100644
+index 8b2de3a..a51a028 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -55,6 +55,7 @@ endif()
@@ -19,7 +19,7 @@ index 8b2de3a..9a40d63 100644
  
  if (KALDI_BUILD_TEST)
      include(CTest)
-@@ -166,10 +167,14 @@ endif()
+@@ -166,10 +167,15 @@ endif()
  
  add_definitions(-DKALDI_NO_PORTAUDIO=1)
  
@@ -29,6 +29,7 @@ index 8b2de3a..9a40d63 100644
 -    set(KALDI_VERSION "${KALDI_VERSION}.${KALDI_PATCH_NUMBER}")
 +if(${OVERRIDE_KALDI_VERSION})
 +    set(KALDI_VERSION "${OVERRIDE_KALDI_VERSION}")
++    message(STATUS "Setting KALDI_VERSION to \"${KALDI_VERSION}\"")
 +else()
 +    include(VersionHelper)
 +    get_version() # this will set KALDI_VERSION and KALDI_PATCH_NUMBER
