@@ -1,14 +1,14 @@
-From af0430ee50271988aedc5b1e222d2b5b1c5692b9 Mon Sep 17 00:00:00 2001
+From 369f171d1616fe9f6f33f5564cef1621d88b29d8 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
-Date: Mon, 18 Oct 2021 18:25:44 -0700
-Subject: [PATCH] Add flag for version so it's not computed from git history
+Date: Tue, 19 Oct 2021 14:14:45 -0700
+Subject: [PATCH] Patch CMakeLists.txt to allow for external version
 
 ---
- CMakeLists.txt | 14 +++++++++-----
- 1 file changed, 9 insertions(+), 5 deletions(-)
+ CMakeLists.txt | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a0b..337a6f26c 100644
+index 8b2de3a..9a40d63 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -55,6 +55,7 @@ endif()
@@ -16,14 +16,13 @@ index 8b2de3a0b..337a6f26c 100644
  option(KALDI_BUILD_TEST "If disabled, will make add_kaldi_test_executable a no-op" ON)
  option(KALDI_USE_PATCH_NUMBER "Use MAJOR.MINOR.PATCH format, otherwise MAJOR.MINOR" OFF)
 +set(OVERRIDE_KALDI_VERSION "" CACHE STRING "Use externally supplied Kaldi version")
-
+ 
  if (KALDI_BUILD_TEST)
      include(CTest)
-@@ -165,11 +166,14 @@ if(CUDA_FOUND)
- endif()
-
+@@ -166,10 +167,14 @@ endif()
+ 
  add_definitions(-DKALDI_NO_PORTAUDIO=1)
--
+ 
 -include(VersionHelper)
 -get_version() # this will set KALDI_VERSION and KALDI_PATCH_NUMBER
 -if(${KALDI_USE_PATCH_NUMBER})
@@ -37,8 +36,8 @@ index 8b2de3a0b..337a6f26c 100644
 +        set(KALDI_VERSION "${KALDI_VERSION}.${KALDI_PATCH_NUMBER}")
 +    endif()
  endif()
-
+ 
  # get_third_party(openfst)
---
+-- 
 2.32.0
 
