@@ -9,6 +9,6 @@ cmake -GNinja -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DC
 
 cmake --build . --target install --config Release -- -j ${CPU_COUNT}
 
-ls lib/ | grep ^libfst.*so$ | xargs -d"\n" rm #  Clean up libfst.so style files to prevent compatibility issues with openfst package
+ls ${PREFIX}/lib | grep ^libfst.*so$ | xargs -0 rm -v "{}" #  Clean up libfst.so style files to prevent compatibility issues with openfst package
 
 popd
