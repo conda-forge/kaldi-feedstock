@@ -1,4 +1,3 @@
-#!/bin/bash
 
 fstarcsort  --help
 fstclosure  --help

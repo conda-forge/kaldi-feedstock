@@ -25,7 +25,10 @@ requirements:
     - libtool  # [not win]
     - automake  # [not win]
   host:
-    - openblas
+    - libblas
+    - libcblas
+    - liblapack
+    - blas-devel
     - pthreads-win32  # [win]
     - wget  # [not win]
     - sox  # [not win]
@@ -33,6 +36,10 @@ requirements:
     - subversion  # [not win]
     - gfortran  # [not win]
     - unzip  # [not win]
+
+test:
+  requires:
+    - openfst  # [not win]
     
 about:
   home: http://kaldi-asr.org/

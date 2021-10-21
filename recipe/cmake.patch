@@ -1,17 +1,57 @@
-From 08b15de63b93a11043599f1cc8d68c9b14d5005d Mon Sep 17 00:00:00 2001
+From 33d1fc88896de15759c9bb809970200ce38d3271 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
-Date: Tue, 19 Oct 2021 14:14:45 -0700
-Subject: [PATCH] Patch CMakeLists.txt to allow for external version
+Date: Thu, 21 Oct 2021 15:35:12 -0700
+Subject: [PATCH] Patch cmake build for Kaldi to better support windows and
+ conda installation
 
 ---
- CMakeLists.txt | 18 ++++++++++++------
- 1 file changed, 12 insertions(+), 6 deletions(-)
+ CMakeLists.txt                  | 89 ++++++++++++++++++++++-----------
+ cmake/Utils.cmake               |  4 +-
+ cmake/gen_cmake_skeleton.py     | 65 ++++++++++++++++++------
+ cmake/third_party/openfst.cmake | 71 +++++++++++++++++++++++---
+ 4 files changed, 176 insertions(+), 53 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..ff0fb2b 100644
+index 8b2de3a..ec7401c 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -40,9 +40,9 @@ if(BUILD_SHARED_LIBS)
+@@ -8,6 +8,14 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+ include(GNUInstallDirs)
+ include(Utils)
+ 
++if(CONDA_ROOT)
++    message(STATUS "Adding ${CONDA_ROOT} directories")
++    set(CONDA_INCLUDE, "${CONDA_ROOT}/include")
++    set(CONDA_LIB, "${CONDA_ROOT}/lib")
++
++    include_directories(${CONDA_INCLUDE})
++endif()
++
+ include(third_party/get_third_party)
+ 
+ include(cmake/third_party/openfst.cmake)
+@@ -23,13 +31,20 @@ set(IS_LIB_SHARE "")
+ if(BUILD_SHARED_LIBS)
+     set(IS_LIB_SHARE "--shared")
+ endif()
++set(    set(HAS_CONDA_ROOT "--conda_root")
++"")
++if(CONDA_ROOT)
++    set(HAS_CONDA_ROOT "--conda_root")
++endif()
+ execute_process(COMMAND ${PYTHON_EXECUTABLE}
+     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/gen_cmake_skeleton.py"
+     "${CMAKE_CURRENT_SOURCE_DIR}/src"
+     "--quiet"
+     ${IS_LIB_SHARE}
++    ${HAS_CONDA_ROOT}
+ )
+ unset(IS_LIB_SHARE)
++unset(HAS_CONDA_ROOT)
+ 
+ set(CMAKE_CXX_STANDARD 14)
+ set(CMAKE_CXX_EXTENSIONS OFF)
+@@ -40,9 +55,9 @@ if(BUILD_SHARED_LIBS)
          set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
          message(FATAL_ERROR "DLL is not supported currently")
      elseif(APPLE)
@@ -23,7 +63,30 @@ index 8b2de3a..ff0fb2b 100644
      endif()
  endif()
  
-@@ -166,10 +166,16 @@ endif()
+@@ -73,16 +88,19 @@ if(MATHLIB STREQUAL "OpenBLAS")
+     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
+     link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+ elseif(MATHLIB STREQUAL "MKL")
+-    if(NOT DEFINED ENV{MKLROOT} OR "$ENV{MKLROOT}" STREQUAL "")
++    if(CONDA_ROOT)
++        set(MKLROOT "${CONDA_ROOT}")
++    elseif(NOT DEFINED ENV{MKLROOT} OR "$ENV{MKLROOT}" STREQUAL "")
+         message(FATAL_ERROR "Environment variable MKLROOT is not defined")
+     else()
+         message(STATUS "Finding MKL from \"$ENV{MKLROOT}\"")
++        set(MKLROOT "$ENV{MKLROOT}")
++        normalize_env_path(MKLROOT)
+     endif()
+-    normalize_env_path(ENV{MKLROOT})
+     set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
+     find_package(LAPACK REQUIRED)
+     add_definitions(-DHAVE_MKL=1)
+-    include_directories($ENV{MKLROOT}/include)
++    include_directories("${MKLROOT}/include")
+     link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+ elseif(MATHLIB STREQUAL "Accelerate")
+     execute_process(COMMAND sw_vers -productVersion
+@@ -166,10 +184,17 @@ endif()
  
  add_definitions(-DKALDI_NO_PORTAUDIO=1)
  
@@ -37,6 +100,7 @@ index 8b2de3a..ff0fb2b 100644
 +else()
 +    message(STATUS "Setting KALDI_VERSION with get_version...")
 +    include(VersionHelper)
++    include(VersionHelper)
 +    get_version() # this will set KALDI_VERSION and KALDI_PATCH_NUMBER
 +    if(${KALDI_USE_PATCH_NUMBER})
 +        set(KALDI_VERSION "${KALDI_VERSION}.${KALDI_PATCH_NUMBER}")
@@ -44,6 +108,295 @@ index 8b2de3a..ff0fb2b 100644
  endif()
  
  # get_third_party(openfst)
+@@ -208,8 +233,10 @@ add_subdirectory(src/nnet3)
+ add_subdirectory(src/rnnlm)
+ add_subdirectory(src/chain)
+ add_subdirectory(src/ivector)
+-add_subdirectory(src/online)
+-add_subdirectory(src/online2)
++if(NOT MSVC)
++    add_subdirectory(src/online)
++    add_subdirectory(src/online2)
++endif()
+ add_subdirectory(src/kws)
+ 
+ add_subdirectory(src/itf)
+@@ -239,8 +266,10 @@ add_subdirectory(src/nnet3bin)
+ add_subdirectory(src/rnnlmbin)
+ add_subdirectory(src/chainbin)
+ add_subdirectory(src/ivectorbin)
+-add_subdirectory(src/onlinebin)
+-add_subdirectory(src/online2bin)
++if(NOT MSVC)
++    add_subdirectory(src/onlinebin)
++    add_subdirectory(src/online2bin)
++endif()
+ add_subdirectory(src/kwsbin)
+ 
+ # add all cuda executables
+@@ -249,19 +278,21 @@ if(CUDA_FOUND)
+     add_subdirectory(src/cudadecoderbin)
+ endif()
+ 
+-include(CMakePackageConfigHelpers)
+-# maybe we should put this into subfolder?
+-configure_package_config_file(
+-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/kaldi-config.cmake.in
+-    ${CMAKE_CURRENT_BINARY_DIR}/cmake/kaldi-config.cmake
+-    INSTALL_DESTINATION lib/cmake/kaldi
+-)
+-write_basic_package_version_file(
+-    ${CMAKE_CURRENT_BINARY_DIR}/cmake/kaldi-config-version.cmake
+-    VERSION ${KALDI_VERSION}
+-    COMPATIBILITY AnyNewerVersion
+-)
+-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cmake/kaldi-config.cmake ${CMAKE_CURRENT_BINARY_DIR}/cmake/kaldi-config-version.cmake
+-    DESTINATION lib/cmake/kaldi
+-)
+-install(EXPORT kaldi-targets DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/kaldi)
++if(NOT CONDA_ROOT)
++    include(CMakePackageConfigHelpers)
++    # maybe we should put this into subfolder?
++    configure_package_config_file(
++        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/kaldi-config.cmake.in
++        ${CMAKE_CURRENT_BINARY_DIR}/cmake/kaldi-config.cmake
++        INSTALL_DESTINATION lib/cmake/kaldi
++    )
++    write_basic_package_version_file(
++        ${CMAKE_CURRENT_BINARY_DIR}/cmake/kaldi-config-version.cmake
++        VERSION ${KALDI_VERSION}
++        COMPATIBILITY AnyNewerVersion
++    )
++    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cmake/kaldi-config.cmake ${CMAKE_CURRENT_BINARY_DIR}/cmake/kaldi-config-version.cmake
++        DESTINATION lib/cmake/kaldi
++    )
++    install(EXPORT kaldi-targets DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/kaldi)
++endif()
+\ No newline at end of file
+diff --git a/cmake/Utils.cmake b/cmake/Utils.cmake
+index c7f4582..9b5dfe8 100644
+--- a/cmake/Utils.cmake
++++ b/cmake/Utils.cmake
+@@ -23,7 +23,9 @@ macro(add_kaldi_executable)
+         add_executable(${kaldi_exe_NAME} ${kaldi_exe_SOURCES})
+         target_link_libraries(${kaldi_exe_NAME} PRIVATE ${kaldi_exe_DEPENDS})
+         # list(APPEND KALDI_EXECUTABLES ${kaldi_exe_NAME})
+-        install(TARGETS ${kaldi_exe_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
++        install(TARGETS ${kaldi_exe_NAME}
++        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
++        COMPONENT conda_kaldi)
+ 
+         unset(kaldi_exe_NAME)
+         unset(kaldi_exe_SOURCES)
+diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
+index 4181dc4..db97495 100644
+--- a/cmake/gen_cmake_skeleton.py
++++ b/cmake/gen_cmake_skeleton.py
+@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
+ parser.add_argument("working_dir")
+ parser.add_argument("--quiet", default=False, action="store_true")
+ parser.add_argument("--shared", default=False, action="store_true")
++parser.add_argument("--conda_root", default=False, action="store_true")
+ args = parser.parse_args()
+ 
+ def print_wrapper(*args_, **kwargs):
+@@ -146,10 +147,11 @@ def disable_for_win32(t):
+     return t in disabled
+ 
+ class CMakeListsHeaderLibrary(object):
+-    def __init__(self, dir_name):
++    def __init__(self, dir_name, is_shared=False):
+         self.dir_name = dir_name
+         self.target_name = lib_dir_name_to_lib_target(self.dir_name)
+         self.header_list = []
++        self.is_shared = is_shared
+ 
+     def add_header(self, filename):
+         self.header_list.append(filename)
+@@ -174,20 +176,21 @@ class CMakeListsHeaderLibrary(object):
+         ret.append("add_library(" + self.target_name + " INTERFACE)")
+         ret.append("target_include_directories(" + self.target_name + " INTERFACE ")
+         ret.append("    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>")
+-        ret.append("    $<INSTALL_INTERFACE:include/kaldi>")
++        if self.is_shared:
++            ret.append("    $<INSTALL_INTERFACE:include/kaldi>")
+         ret.append(")\n")
+ 
+         ret.append("""
+ install(TARGETS {tgt} EXPORT kaldi-targets)
+-
+-install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
+-""".format(tgt=self.target_name, dir=self.dir_name))
++if(BUILD_SHARED_LIBS)
++    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
++endif()""".format(tgt=self.target_name, dir=self.dir_name))
+ 
+         return "\n".join(ret)
+ 
+ class CMakeListsLibrary(object):
+ 
+-    def __init__(self, dir_name, is_shared):
++    def __init__(self, dir_name, is_shared, has_conda_root=False):
+         assert(type(is_shared) is bool)
+ 
+         self.dir_name = dir_name
+@@ -198,6 +201,7 @@ class CMakeListsLibrary(object):
+         self.test_source_list = []
+         self.depends = []
+         self.is_shared = is_shared
++        self.has_conda_root = has_conda_root
+ 
+     def add_header(self, filename):
+         self.header_list.append(filename)
+@@ -250,7 +254,10 @@ class CMakeListsLibrary(object):
+         ret.append(")\n")
+         ret.append("target_include_directories(" + self.target_name + " PUBLIC ")
+         ret.append("     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>")
+-        ret.append("     $<INSTALL_INTERFACE:include/kaldi>")
++        if self.has_conda_root:
++            ret.append("     $<BUILD_INTERFACE:${CONDA_ROOT}/include>")
++        else:
++            ret.append("     $<INSTALL_INTERFACE:include/kaldi>")
+         ret.append(")\n")
+ 
+         if len(self.depends) > 0:
+@@ -276,15 +283,41 @@ class CMakeListsLibrary(object):
+             ret.append("endif()")
+ 
+         ret.append("""
+-install(TARGETS {tgt}
+-    EXPORT kaldi-targets
+-    ARCHIVE DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
+-    LIBRARY DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
+-    RUNTIME DESTINATION ${{CMAKE_INSTALL_BINDIR}}
+-)
+-
+-install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
+-""".format(tgt=self.target_name, dir=self.dir_name))
++if(MSVC)
++    install(TARGETS {tgt}
++        EXPORT kaldi-targets
++        RUNTIME 
++            DESTINATION ${{CMAKE_INSTALL_BINDIR}}
++            COMPONENT conda_kaldi
++    )
++
++else()
++if(CONDA_ROOT)
++    install(TARGETS {tgt}
++        EXPORT kaldi-targets
++        LIBRARY 
++            DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
++            NAMELINK_SKIP
++            COMPONENT conda_kaldi
++        RUNTIME 
++            DESTINATION ${{CMAKE_INSTALL_BINDIR}}
++            COMPONENT conda_kaldi
++    )
++else()
++    install(TARGETS {tgt}
++        EXPORT kaldi-targets
++        ARCHIVE 
++            DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
++        LIBRARY 
++            DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
++        RUNTIME 
++            DESTINATION ${{CMAKE_INSTALL_BINDIR}}
++    )
++    
++    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
++endif()
++
++endif()""".format(tgt=self.target_name, dir=self.dir_name))
+ 
+         return "\n".join(ret)
+ 
+diff --git a/cmake/third_party/openfst.cmake b/cmake/third_party/openfst.cmake
+index edb4314..6086d7f 100644
+--- a/cmake/third_party/openfst.cmake
++++ b/cmake/third_party/openfst.cmake
+@@ -9,17 +9,74 @@ FetchContent_Declare(
+ 
+ FetchContent_GetProperties(openfst)
+ if(NOT openfst_POPULATED)
++    message(STATUS "Openfst? CONDA_ROOT ${CONDA_ROOT}")
+     FetchContent_Populate(openfst)
+     include_directories(${openfst_SOURCE_DIR}/src/include)
+ 
+     add_subdirectory(${openfst_SOURCE_DIR} ${openfst_BINARY_DIR})
++    if(CONDA_ROOT)
+ 
+-    install(DIRECTORY ${openfst_SOURCE_DIR}/src/include/ DESTINATION include/
+-            FILES_MATCHING PATTERN "*.h")
++        if(MSVC)
++            install(TARGETS fstarcsort fstclosure fstcompile fstcompose fstconcat fstconnect fstconvert fstdeterminize
++                            fstdifference fstdisambiguate fstdraw fstencode fstepsnormalize fstequal fstequivalent
++                            fstinfo fstintersect fstinvert fstisomorphic fstmap fstminimize fstprint fstproject fstprune
++                            fstpush fstrandgen fstrelabel fstreplace fstreverse fstreweight fstrmepsilon fstshortestdistance
++                            fstshortestpath fstsymbols fstsynchronize fsttopsort fstunion
++            RUNTIME
++                DESTINATION ${CMAKE_INSTALL_BINDIR}
++                COMPONENT conda_kaldi
++            )
++            install(TARGETS farcompilestrings farcreate farequal farextract farinfo farisomorphic farprintstrings
++            RUNTIME
++                DESTINATION ${CMAKE_INSTALL_BINDIR}
++                COMPONENT conda_kaldi
++            )
++            install(TARGETS fstlinear fstloglinearapply
++            RUNTIME
++                DESTINATION ${CMAKE_INSTALL_BINDIR}
++                COMPONENT conda_kaldi
++            )
++            install(TARGETS mpdtcompose mpdtexpand mpdtinfo mpdtreverse
++            RUNTIME
++                DESTINATION ${CMAKE_INSTALL_BINDIR}
++                COMPONENT conda_kaldi
++            )
++            install(TARGETS pdtcompose pdtexpand pdtinfo pdtreplace pdtreverse pdtshortestpath
++            RUNTIME
++                DESTINATION ${CMAKE_INSTALL_BINDIR}
++                COMPONENT conda_kaldi
++            )
++            install(TARGETS fstspecial
++            RUNTIME
++                DESTINATION ${CMAKE_INSTALL_BINDIR}
++                COMPONENT conda_kaldi
++            )
++        else()
++
++            install(TARGETS fst
++                    EXPORT kaldi-targets
++                    LIBRARY
++                        DESTINATION ${CMAKE_INSTALL_LIBDIR}
++                        COMPONENT conda_kaldi
++                        NAMELINK_SKIP
++                    )
++
++        endif()
++    else()
++        install(DIRECTORY ${openfst_SOURCE_DIR}/src/include/ DESTINATION include/
++                FILES_MATCHING PATTERN "*.h")
++    endif()
++
++
++        install(TARGETS fst
++                EXPORT kaldi-targets
++                LIBRARY
++                    DESTINATION ${CMAKE_INSTALL_LIBDIR}
++                    COMPONENT conda_kaldi
++                    NAMELINK_SKIP
++                RUNTIME
++                    DESTINATION ${CMAKE_INSTALL_BINDIR}
++                    COMPONENT conda_kaldi
++                )
+ 
+-    install(TARGETS fst
+-            EXPORT kaldi-targets
+-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+ endif()
 -- 
-2.32.0
+2.33.1
 
