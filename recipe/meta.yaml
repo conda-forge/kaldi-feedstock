@@ -26,6 +26,7 @@ requirements:
     - automake  # [not win]
   host:
     - openblas
+    - pthreads-win32  # [win]
     - wget  # [not win]
     - sox  # [not win]
     - zlib  # [not win]

@@ -1,16 +1,28 @@
-From 4469f100654040066231cd519af95f7f7c64a897 Mon Sep 17 00:00:00 2001
+From 08b15de63b93a11043599f1cc8d68c9b14d5005d Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Tue, 19 Oct 2021 14:14:45 -0700
 Subject: [PATCH] Patch CMakeLists.txt to allow for external version
 
 ---
- CMakeLists.txt | 14 ++++++++++----
- 1 file changed, 10 insertions(+), 4 deletions(-)
+ CMakeLists.txt | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..1f8bf41 100644
+index 8b2de3a..ff0fb2b 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
+@@ -40,9 +40,9 @@ if(BUILD_SHARED_LIBS)
+         set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+         message(FATAL_ERROR "DLL is not supported currently")
+     elseif(APPLE)
+-        set(CMAKE_INSTALL_RPATH "@loader_path")
++        set(CMAKE_INSTALL_RPATH "@loader_path/../lib")
+     else()
+-        set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib;$ORIGIN/../../tools/openfst/lib")
++        set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+     endif()
+ endif()
+ 
 @@ -166,10 +166,16 @@ endif()
  
  add_definitions(-DKALDI_NO_PORTAUDIO=1)
