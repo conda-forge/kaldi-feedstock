@@ -1,18 +1,18 @@
-From 33d1fc88896de15759c9bb809970200ce38d3271 Mon Sep 17 00:00:00 2001
+From 30419afe2c860c558c49c644900634c915969ece Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Thu, 21 Oct 2021 15:35:12 -0700
 Subject: [PATCH] Patch cmake build for Kaldi to better support windows and
  conda installation
 
 ---
- CMakeLists.txt                  | 89 ++++++++++++++++++++++-----------
- cmake/Utils.cmake               |  4 +-
- cmake/gen_cmake_skeleton.py     | 65 ++++++++++++++++++------
- cmake/third_party/openfst.cmake | 71 +++++++++++++++++++++++---
- 4 files changed, 176 insertions(+), 53 deletions(-)
+ CMakeLists.txt                  |  90 ++++++++++++++++--------
+ cmake/Utils.cmake               |   4 +-
+ cmake/gen_cmake_skeleton.py     | 118 ++++++++++++++++++++++++--------
+ cmake/third_party/openfst.cmake |  71 +++++++++++++++++--
+ 4 files changed, 219 insertions(+), 64 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..ec7401c 100644
+index 8b2de3a..12e7f53 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -8,6 +8,14 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
@@ -121,7 +121,15 @@ index 8b2de3a..ec7401c 100644
  add_subdirectory(src/kws)
  
  add_subdirectory(src/itf)
-@@ -239,8 +266,10 @@ add_subdirectory(src/nnet3bin)
+@@ -228,6 +255,7 @@ endif()
+ # add all native executables
+ add_subdirectory(src/bin)
+ add_subdirectory(src/gmmbin)
++add_subdirectory(src/fgmmbin)
+ add_subdirectory(src/featbin)
+ add_subdirectory(src/sgmm2bin)
+ add_subdirectory(src/fstbin)
+@@ -239,8 +267,10 @@ add_subdirectory(src/nnet3bin)
  add_subdirectory(src/rnnlmbin)
  add_subdirectory(src/chainbin)
  add_subdirectory(src/ivectorbin)
@@ -134,7 +142,7 @@ index 8b2de3a..ec7401c 100644
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables
-@@ -249,19 +278,21 @@ if(CUDA_FOUND)
+@@ -249,19 +279,21 @@ if(CUDA_FOUND)
      add_subdirectory(src/cudadecoderbin)
  endif()
  
@@ -189,20 +197,115 @@ index c7f4582..9b5dfe8 100644
          unset(kaldi_exe_NAME)
          unset(kaldi_exe_SOURCES)
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index 4181dc4..db97495 100644
+index 4181dc4..b96ff3d 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
-@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
+@@ -15,36 +15,47 @@ parser = argparse.ArgumentParser()
  parser.add_argument("working_dir")
  parser.add_argument("--quiet", default=False, action="store_true")
  parser.add_argument("--shared", default=False, action="store_true")
 +parser.add_argument("--conda_root", default=False, action="store_true")
  args = parser.parse_args()
  
++
  def print_wrapper(*args_, **kwargs):
-@@ -146,10 +147,11 @@ def disable_for_win32(t):
+     if not args.quiet:
+         print(*args_, **kwargs)
+ 
++
+ def get_subdirectories(d):
+     return [name for name in os.listdir(d) if os.path.isdir(os.path.join(d, name))]
+ 
++
+ def is_bin_dir(d):
+     return d.endswith("bin")
+ 
++
+ def get_files(d):
+     return [name for name in os.listdir(d) if os.path.isfile(os.path.join(d, name)) and (name not in EXCLUDE_FILES)]
+ 
++
+ def is_header(f):
+     return f.endswith(".h")
+ 
++
+ def is_cu_source(f):
+     return f.endswith(".cu")
+ 
++
+ def is_test_source(f):
+     return f.endswith("-test.cc")
+ 
++
+ def is_source(f):
+     return f.endswith(".cc") and not is_test_source(f)
+ 
++
+ def lib_dir_name_to_lib_target(dir_name):
+     return "kaldi-" + dir_name
+ 
++
+ def bin_dir_name_to_lib_target(dir_name):
+     """return the primary lib target for all executable targets in this bin dir"""
+     assert is_bin_dir(dir_name)
+@@ -56,6 +67,7 @@ def bin_dir_name_to_lib_target(dir_name):
+     else:
+         return "kaldi-" + dir_name[:-3]
+ 
++
+ def wrap_notwin32_condition(should_wrap, lines):
+     if isinstance(lines, str):
+         lines = [lines]
+@@ -85,8 +97,8 @@ def get_exe_additional_depends(t):
+         "phones-to-prons": ["fstext"],
+ 
+         # solve gmmbin
+-        "post-to-feats" : ["hmm"],
+-        "append-post-to-feats" : ["hmm"],
++        "post-to-feats": ["hmm"],
++        "append-post-to-feats": ["hmm"],
+         "gmm-*": ["hmm", "transform"],
+         "gmm-latgen-*": ["decoder"],
+         "gmm-decode-*": ["decoder"],
+@@ -94,6 +106,21 @@ def get_exe_additional_depends(t):
+         "gmm-align-compiled": ["decoder"],
+         "gmm-est-fmllr-gpost": ["sgmm2", "hmm"],
+         "gmm-rescore-lattice": ["hmm", "lat"],
++        "gmm-latgen-biglm-faster": ["hmm", "lat", "fstext", "decoder"],
++
++        # solve fgmmbin
++        "fgmm-global-acc-stats-post": ["gmm", "hmm"],
++        "fgmm-global-acc-stats": ["gmm"],
++        "fgmm-global-copy": ["gmm"],
++        "fgmm-global-est": ["gmm"],
++        "fgmm-global-get-frame-likes": ["gmm"],
++        "fgmm-global-gselect-to-post": ["gmm", "hmm"],
++        "fgmm-global-info": ["gmm", "hmm"],
++        "fgmm-global-init-from-accs": ["gmm"],
++        "fgmm-global-merge": ["gmm"],
++        "fgmm-global-sum-accs": ["gmm"],
++        "fgmm-global-to-gmm": ["gmm"],
++        "fgmm-gselect": ["gmm", "hmm"],
+ 
+         # solve fstbin
+         "make-grammar-fst": ["decoder"],
+@@ -132,8 +159,9 @@ def get_exe_additional_depends(t):
+     l = []
+     for pattern in additional.keys():
+         if fnmatch.fnmatch(t, pattern):
+-            l.extend(list(map(lambda name: lib_dir_name_to_lib_target(name), additional[pattern])))
+-    return sorted(list(set(l)))
++            l.extend(set(map(lambda name: lib_dir_name_to_lib_target(name), additional[pattern])))
++    return sorted(l)
++
+ 
+ def disable_for_win32(t):
+     disabled = [
+@@ -145,11 +173,13 @@ def disable_for_win32(t):
+     ]
      return t in disabled
  
++
  class CMakeListsHeaderLibrary(object):
 -    def __init__(self, dir_name):
 +    def __init__(self, dir_name, is_shared=False):
@@ -213,7 +316,7 @@ index 4181dc4..db97495 100644
  
      def add_header(self, filename):
          self.header_list.append(filename)
-@@ -174,20 +176,21 @@ class CMakeListsHeaderLibrary(object):
+@@ -174,21 +204,23 @@ class CMakeListsHeaderLibrary(object):
          ret.append("add_library(" + self.target_name + " INTERFACE)")
          ret.append("target_include_directories(" + self.target_name + " INTERFACE ")
          ret.append("    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>")
@@ -233,14 +336,17 @@ index 4181dc4..db97495 100644
  
          return "\n".join(ret)
  
++
  class CMakeListsLibrary(object):
  
 -    def __init__(self, dir_name, is_shared):
+-        assert(type(is_shared) is bool)
 +    def __init__(self, dir_name, is_shared, has_conda_root=False):
-         assert(type(is_shared) is bool)
++        assert (type(is_shared) is bool)
  
          self.dir_name = dir_name
-@@ -198,6 +201,7 @@ class CMakeListsLibrary(object):
+         self.target_name = lib_dir_name_to_lib_target(self.dir_name)
+@@ -198,6 +230,7 @@ class CMakeListsLibrary(object):
          self.test_source_list = []
          self.depends = []
          self.is_shared = is_shared
@@ -248,7 +354,7 @@ index 4181dc4..db97495 100644
  
      def add_header(self, filename):
          self.header_list.append(filename)
-@@ -250,7 +254,10 @@ class CMakeListsLibrary(object):
+@@ -250,7 +283,10 @@ class CMakeListsLibrary(object):
          ret.append(")\n")
          ret.append("target_include_directories(" + self.target_name + " PUBLIC ")
          ret.append("     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>")
@@ -260,7 +366,12 @@ index 4181dc4..db97495 100644
          ret.append(")\n")
  
          if len(self.depends) > 0:
-@@ -276,15 +283,41 @@ class CMakeListsLibrary(object):
+@@ -272,28 +308,53 @@ class CMakeListsLibrary(object):
+                 exe_target = get_test_exe_name(f)
+                 depends = (self.target_name + " " + " ".join(get_exe_additional_depends(exe_target))).strip()
+                 ret.extend(wrap_notwin32_condition(disable_for_win32(self.target_name),
+-                    "    add_kaldi_test_executable(NAME " + exe_target + " SOURCES " + f + " DEPENDS " + depends + ")"))
++                                                   "    add_kaldi_test_executable(NAME " + exe_target + " SOURCES " + f + " DEPENDS " + depends + ")"))
              ret.append("endif()")
  
          ret.append("""
@@ -303,7 +414,7 @@ index 4181dc4..db97495 100644
 +        RUNTIME 
 +            DESTINATION ${{CMAKE_INSTALL_BINDIR}}
 +    )
-+    
++
 +    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
 +endif()
 +
@@ -311,6 +422,37 @@ index 4181dc4..db97495 100644
  
          return "\n".join(ret)
  
+ 
+-
+ class CMakeListsExecutable(object):
+ 
+     def __init__(self, dir_name, filename):
+-        assert(dir_name.endswith("bin"))
++        assert (dir_name.endswith("bin"))
+         self.list = []
+         exe_name = os.path.splitext(os.path.basename(filename))[0]
+         file_name = filename
+@@ -303,14 +364,17 @@ class CMakeListsExecutable(object):
+     def gen_code(self):
+         ret = []
+         for exe_name, file_name, depend in self.list:
+-            depends = (depend + " " + " ".join(get_exe_additional_depends(exe_name))).strip()
++            if exe_name.startswith('fgmm'):
++                depends =(" ".join(get_exe_additional_depends(exe_name))).strip()
++            else:
++                depends = (depend + " " + " ".join(get_exe_additional_depends(exe_name))).strip()
+             ret.extend(wrap_notwin32_condition(disable_for_win32(exe_name),
+-                       "add_kaldi_executable(NAME " + exe_name + " SOURCES " + file_name + " DEPENDS " + depends + ")"))
++                                               "add_kaldi_executable(NAME " + exe_name + " SOURCES " + file_name + " DEPENDS " + depends + ")"))
+ 
+         return "\n".join(ret)
+ 
+-class CMakeListsFile(object):
+ 
++class CMakeListsFile(object):
+     GEN_CMAKE_HEADER = "# generated with cmake/gen_cmake_skeleton.py, DO NOT MODIFY.\n"
+ 
+     def __init__(self, directory):
 diff --git a/cmake/third_party/openfst.cmake b/cmake/third_party/openfst.cmake
 index edb4314..6086d7f 100644
 --- a/cmake/third_party/openfst.cmake

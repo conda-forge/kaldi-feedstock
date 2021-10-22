@@ -13,7 +13,7 @@ source:
     - cmake.patch
 
 build:
-  number: 1
+  number: 0
     
 requirements:
   build:
@@ -36,11 +36,15 @@ requirements:
     - subversion  # [not win]
     - gfortran  # [not win]
     - unzip  # [not win]
+  run:
+    - libblas
+    - libcblas
+    - liblapack
 
 test:
   requires:
     - openfst  # [not win]
-    
+
 about:
   home: http://kaldi-asr.org/
   license: Apache-2.0
