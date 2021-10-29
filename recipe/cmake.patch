@@ -1,4 +1,4 @@
-From 30419afe2c860c558c49c644900634c915969ece Mon Sep 17 00:00:00 2001
+From d2de748684ed4efd19e72d6f26eb3aeb70e36b3e Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Thu, 21 Oct 2021 15:35:12 -0700
 Subject: [PATCH] Patch cmake build for Kaldi to better support windows and
@@ -8,8 +8,8 @@ Subject: [PATCH] Patch cmake build for Kaldi to better support windows and
  CMakeLists.txt                  |  90 ++++++++++++++++--------
  cmake/Utils.cmake               |   4 +-
  cmake/gen_cmake_skeleton.py     | 118 ++++++++++++++++++++++++--------
- cmake/third_party/openfst.cmake |  71 +++++++++++++++++--
- 4 files changed, 219 insertions(+), 64 deletions(-)
+ cmake/third_party/openfst.cmake |  70 +++++++++++++++++--
+ 4 files changed, 218 insertions(+), 64 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 8b2de3a..12e7f53 100644
@@ -454,10 +454,10 @@ index 4181dc4..b96ff3d 100644
  
      def __init__(self, directory):
 diff --git a/cmake/third_party/openfst.cmake b/cmake/third_party/openfst.cmake
-index edb4314..6086d7f 100644
+index edb4314..81af029 100644
 --- a/cmake/third_party/openfst.cmake
 +++ b/cmake/third_party/openfst.cmake
-@@ -9,17 +9,74 @@ FetchContent_Declare(
+@@ -9,17 +9,73 @@ FetchContent_Declare(
  
  FetchContent_GetProperties(openfst)
  if(NOT openfst_POPULATED)
@@ -508,7 +508,6 @@ index edb4314..6086d7f 100644
 +        else()
 +
 +            install(TARGETS fst
-+                    EXPORT kaldi-targets
 +                    LIBRARY
 +                        DESTINATION ${CMAKE_INSTALL_LIBDIR}
 +                        COMPONENT conda_kaldi
