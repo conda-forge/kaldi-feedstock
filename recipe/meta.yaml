@@ -1,5 +1,5 @@
-{% set version = "r7271.1a4dbf6" %}
-{% set commit = "1a4dbf6be118e4967cf4efd510811ef72cdfee3d" %}
+{% set version = "5.5.985" %}
+{% set commit = "94f3762603ba31e39b8ebf618cf0608fa5f1338f" %}
 
 package:
   name: kaldi
@@ -8,29 +8,39 @@ package:
 source:
   fn: {{ version }}-{{ commit }}.tar.gz
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
-  sha256: 70dd0dd1ca0b66a5c8726ea40861da001a721563c2984b55ea5c2c236e89e5c8
+  sha256: 6235b76b4142e99afab5115472c7f77ebd65b9f01a5427ed57fa34ec63a77810
   patches:
-    # Kaldi builds in place, so the patch makes just compilation of
-    # the libraries in ${PREFIX}/lib; in addition, it contains sources
-    # of two additional binaries for UBM MAP adaptation and scoring.
-    - conda-kaldi.patch
+    - cmake.patch
 
 build:
-  number: 2
-  skip: true  # [not linux]
+  number: 0
     
 requirements:
   build:
-    - gcc >=4.8.5
-    - openfst
-    - openblas 0.2.20|0.2.20.*
-    - speex
+    - {{ compiler('cxx') }}
+    - {{ compiler('fortran') }}  # [not win]
+    - cmake
+    - make  # [not win]
+    - m2-patch  # [win]
+    - ninja
+    - libtool  # [not win]
+    - automake  # [not win]
+  host:
+    - libblas
+    - libcblas
+    - liblapack
+    - blas-devel
+    - pthreads-win32  # [win]
+    - zlib
   run:
-    - libgcc >=4.8.5
-    - openfst
-    - openblas 0.2.20|0.2.20.*
-    - speex
-    
+    - libblas
+    - libcblas
+    - liblapack
+
+test:
+  requires:
+    - openfst  # [not win]
+
 about:
   home: http://kaldi-asr.org/
   license: Apache-2.0

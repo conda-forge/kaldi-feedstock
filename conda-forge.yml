@@ -1,1 +1,7 @@
+azure:
+  settings_win:
+    pool:
+      vmImage: windows-2019
 conda_forge_output_validation: true
+provider: { win: azure }
+test_on_native_only: true
