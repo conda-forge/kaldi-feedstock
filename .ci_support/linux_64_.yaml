@@ -10,19 +10,23 @@ cxx_compiler_version:
 - '9'
 docker_image:
 - quay.io/condaforge/linux-anvil-comp7
-openblas:
-- 0.3.*
+fortran_compiler:
+- gfortran
+fortran_compiler_version:
+- '9'
+libblas:
+- 3.8 *netlib
+libcblas:
+- 3.8 *netlib
+liblapack:
+- 3.8 *netlib
 pin_run_as_build:
-  sox:
-    max_pin: x.x.x
   zlib:
     max_pin: x.x
-sox:
-- 14.4.2
 target_platform:
 - linux-64
 zip_keys:
-- - cdt_name
-  - docker_image
+- - cxx_compiler_version
+  - fortran_compiler_version
 zlib:
 - '1.2'

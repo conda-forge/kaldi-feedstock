@@ -4,7 +4,16 @@ channel_targets:
 - conda-forge main
 cxx_compiler:
 - vs2019
-openblas:
-- 0.3.*
+libblas:
+- 3.8 *netlib
+libcblas:
+- 3.8 *netlib
+liblapack:
+- 3.8 *netlib
+pin_run_as_build:
+  zlib:
+    max_pin: x.x
 target_platform:
 - win-64
+zlib:
+- '1.2'
