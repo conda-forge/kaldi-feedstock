@@ -46,6 +46,8 @@ outputs:
         - mkl-devel             # [x86]
         - mkl        # [x86]
         - libblas * *mkl       # [x86]
+        - libcblas * *mkl       # [x86]
+        - liblapack * *mkl       # [x86]
         - libblas               # [not x86]
         - libcblas              # [not x86]
         - liblapack             # [not x86]
@@ -56,6 +58,8 @@ outputs:
       run:
         - mkl         # [x86]
         - libblas * *mkl       # [x86]
+        - libcblas * *mkl       # [x86]
+        - liblapack * *mkl       # [x86]
         - libblas               # [not x86]
         - libcblas              # [not x86]
         - liblapack             # [not x86]
