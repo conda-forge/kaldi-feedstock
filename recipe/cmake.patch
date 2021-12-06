@@ -1,92 +1,149 @@
-From d2de748684ed4efd19e72d6f26eb3aeb70e36b3e Mon Sep 17 00:00:00 2001
+From 68d88bfe3f8a331f87386fd93ee8481dea1093fa Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
-Date: Thu, 21 Oct 2021 15:35:12 -0700
-Subject: [PATCH] Patch cmake build for Kaldi to better support windows and
- conda installation
+Date: Wed, 1 Dec 2021 16:33:59 -0800
+Subject: [PATCH] Update CMake build
 
 ---
- CMakeLists.txt                  |  90 ++++++++++++++++--------
- cmake/Utils.cmake               |   4 +-
- cmake/gen_cmake_skeleton.py     | 118 ++++++++++++++++++++++++--------
- cmake/third_party/openfst.cmake |  70 +++++++++++++++++--
- 4 files changed, 218 insertions(+), 64 deletions(-)
+ CMakeLists.txt                  | 156 +++---
+ cmake/FindBLAS.cmake            | 902 --------------------------------
+ cmake/FindLAPACK.cmake          | 496 ------------------
+ cmake/Utils.cmake               |   2 +-
+ cmake/gen_cmake_skeleton.py     |  41 +-
+ cmake/third_party/openfst.cmake |  78 ++-
+ 6 files changed, 207 insertions(+), 1468 deletions(-)
+ delete mode 100644 cmake/FindBLAS.cmake
+ delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..12e7f53 100644
+index 8b2de3a..5cfa987 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -8,6 +8,14 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+@@ -1,4 +1,4 @@
+-cmake_minimum_required(VERSION 3.5)
++cmake_minimum_required(VERSION 3.18)
+ project(kaldi)
+ 
+ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+@@ -8,6 +8,16 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
  include(GNUInstallDirs)
  include(Utils)
  
 +if(CONDA_ROOT)
 +    message(STATUS "Adding ${CONDA_ROOT} directories")
-+    set(CONDA_INCLUDE, "${CONDA_ROOT}/include")
-+    set(CONDA_LIB, "${CONDA_ROOT}/lib")
++    set(CMAKE_INCLUDE_PATH "${CONDA_ROOT}/include")
++    set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib")
++    link_directories("${CONDA_ROOT}/lib")
++    include_directories("${CONDA_ROOT}/include")
++    set(CUDA_TOOLKIT_ROOT_DIR "${CONDA_ROOT}")
 +
-+    include_directories(${CONDA_INCLUDE})
 +endif()
 +
  include(third_party/get_third_party)
  
  include(cmake/third_party/openfst.cmake)
-@@ -23,13 +31,20 @@ set(IS_LIB_SHARE "")
- if(BUILD_SHARED_LIBS)
-     set(IS_LIB_SHARE "--shared")
- endif()
-+set(    set(HAS_CONDA_ROOT "--conda_root")
-+"")
+@@ -66,45 +76,53 @@ link_libraries(${CMAKE_DL_LIBS})
+ find_package(Threads)
+ link_libraries(Threads::Threads)
+ 
+-if(MATHLIB STREQUAL "OpenBLAS")
+-    set(BLA_VENDOR "OpenBLAS")
 +if(CONDA_ROOT)
-+    set(HAS_CONDA_ROOT "--conda_root")
-+endif()
- execute_process(COMMAND ${PYTHON_EXECUTABLE}
-     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/gen_cmake_skeleton.py"
-     "${CMAKE_CURRENT_SOURCE_DIR}/src"
-     "--quiet"
-     ${IS_LIB_SHARE}
-+    ${HAS_CONDA_ROOT}
- )
- unset(IS_LIB_SHARE)
-+unset(HAS_CONDA_ROOT)
- 
- set(CMAKE_CXX_STANDARD 14)
- set(CMAKE_CXX_EXTENSIONS OFF)
-@@ -40,9 +55,9 @@ if(BUILD_SHARED_LIBS)
-         set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-         message(FATAL_ERROR "DLL is not supported currently")
-     elseif(APPLE)
--        set(CMAKE_INSTALL_RPATH "@loader_path")
-+        set(CMAKE_INSTALL_RPATH "@loader_path/../lib")
++    set(BLA_VENDOR "Generic")
++    find_package(BLAS REQUIRED)
+     find_package(LAPACK REQUIRED)
+     add_definitions(-DHAVE_CLAPACK=1)
+     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
+-    link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+-elseif(MATHLIB STREQUAL "MKL")
+-    if(NOT DEFINED ENV{MKLROOT} OR "$ENV{MKLROOT}" STREQUAL "")
+-        message(FATAL_ERROR "Environment variable MKLROOT is not defined")
++    link_libraries(BLAS::BLAS)
++    link_libraries(LAPACK::LAPACK)
++else()
++    if(MATHLIB STREQUAL "OpenBLAS")
++        add_definitions(-DHAVE_CLAPACK=1)
++        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
++        link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
++    elseif(MATHLIB STREQUAL "MKL")
++        if(NOT DEFINED ENV{MKLROOT} OR "$ENV{MKLROOT}" STREQUAL "")
++            message(FATAL_ERROR "Environment variable MKLROOT is not defined")
++        else()
++            message(STATUS "Finding MKL from \"$ENV{MKLROOT}\"")
++        endif()
++        normalize_env_path(ENV{MKLROOT})
++        set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
++        find_package(LAPACK REQUIRED)
++        add_definitions(-DHAVE_MKL=1)
++        include_directories($ENV{MKLROOT}/include)
++        link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
++    elseif(MATHLIB STREQUAL "Accelerate")
++        execute_process(COMMAND sw_vers -productVersion
++            OUTPUT_VARIABLE MACOS_VERSION)
++        if(MACOS_VERSION VERSION_LESS "10.12" AND MACOS_VERSION VERSION_GREATER_EQUAL "10.11")
++            message(WARNING
++                "**BAD WARNING**: You are using OS X El Capitan.  Some versions of this OS"
++                " have a bug in the BLAS implementation that affects Kaldi."
++                " After compiling, cd to matrix/ and type 'make test'.  The"
++                " test will fail if the problem exists in your version."
++                " Eventually this issue will be fixed by system updates from"
++                " Apple.  Unexplained crashes with reports of NaNs will"
++                " be caused by this bug, but some recipes will (sometimes) work."
++            )
++        endif()
++        set(BLA_VENDOR "Apple")
++        find_package(BLAS REQUIRED)
++        find_package(LAPACK REQUIRED)
++        add_definitions(-DHAVE_CLAPACK=1)
++        link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
      else()
--        set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib;$ORIGIN/../../tools/openfst/lib")
-+        set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+-        message(STATUS "Finding MKL from \"$ENV{MKLROOT}\"")
+-    endif()
+-    normalize_env_path(ENV{MKLROOT})
+-    set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
+-    find_package(LAPACK REQUIRED)
+-    add_definitions(-DHAVE_MKL=1)
+-    include_directories($ENV{MKLROOT}/include)
+-    link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+-elseif(MATHLIB STREQUAL "Accelerate")
+-    execute_process(COMMAND sw_vers -productVersion
+-        OUTPUT_VARIABLE MACOS_VERSION)
+-    if(MACOS_VERSION VERSION_LESS "10.12" AND MACOS_VERSION VERSION_GREATER_EQUAL "10.11")
+-        message(WARNING
+-            "**BAD WARNING**: You are using OS X El Capitan.  Some versions of this OS"
+-            " have a bug in the BLAS implementation that affects Kaldi."
+-            " After compiling, cd to matrix/ and type 'make test'.  The"
+-            " test will fail if the problem exists in your version."
+-            " Eventually this issue will be fixed by system updates from"
+-            " Apple.  Unexplained crashes with reports of NaNs will"
+-            " be caused by this bug, but some recipes will (sometimes) work."
+-        )
++        message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
+     endif()
+-    set(BLA_VENDOR "Apple")
+-    find_package(BLAS REQUIRED)
+-    find_package(LAPACK REQUIRED)
+-    add_definitions(-DHAVE_CLAPACK=1)
+-    link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+-else()
+-    message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
+ endif()
+ 
+ if(MSVC)
+@@ -125,7 +143,12 @@ if(MSVC)
      endif()
  endif()
  
-@@ -73,16 +88,19 @@ if(MATHLIB STREQUAL "OpenBLAS")
-     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
-     link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
- elseif(MATHLIB STREQUAL "MKL")
--    if(NOT DEFINED ENV{MKLROOT} OR "$ENV{MKLROOT}" STREQUAL "")
-+    if(CONDA_ROOT)
-+        set(MKLROOT "${CONDA_ROOT}")
-+    elseif(NOT DEFINED ENV{MKLROOT} OR "$ENV{MKLROOT}" STREQUAL "")
-         message(FATAL_ERROR "Environment variable MKLROOT is not defined")
-     else()
-         message(STATUS "Finding MKL from \"$ENV{MKLROOT}\"")
-+        set(MKLROOT "$ENV{MKLROOT}")
-+        normalize_env_path(MKLROOT)
-     endif()
--    normalize_env_path(ENV{MKLROOT})
-     set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
-     find_package(LAPACK REQUIRED)
-     add_definitions(-DHAVE_MKL=1)
--    include_directories($ENV{MKLROOT}/include)
-+    include_directories("${MKLROOT}/include")
-     link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
- elseif(MATHLIB STREQUAL "Accelerate")
-     execute_process(COMMAND sw_vers -productVersion
-@@ -166,10 +184,17 @@ endif()
+-find_package(CUDA)
++if (CONDA_ROOT)
++    find_package(CUDAToolkit REQUIRED)
++    find_package(CUDA REQUIRED)
++else()
++    find_package(CUDA)
++endif()
+ if(CUDA_FOUND)
+     set(CUDA_PROPAGATE_HOST_FLAGS ON)
+     set(KALDI_CUDA_NVCC_FLAGS "--default-stream=per-thread;-std=c++${CMAKE_CXX_STANDARD}")
+@@ -166,10 +189,16 @@ endif()
  
  add_definitions(-DKALDI_NO_PORTAUDIO=1)
  
@@ -97,9 +154,8 @@ index 8b2de3a..12e7f53 100644
 +if(OVERRIDE_KALDI_VERSION)
 +    set(KALDI_VERSION "${OVERRIDE_KALDI_VERSION}")
 +    message(STATUS "Setting KALDI_VERSION to \"${KALDI_VERSION}\"")
-+else()
++else() # Original functionality
 +    message(STATUS "Setting KALDI_VERSION with get_version...")
-+    include(VersionHelper)
 +    include(VersionHelper)
 +    get_version() # this will set KALDI_VERSION and KALDI_PATCH_NUMBER
 +    if(${KALDI_USE_PATCH_NUMBER})
@@ -108,7 +164,7 @@ index 8b2de3a..12e7f53 100644
  endif()
  
  # get_third_party(openfst)
-@@ -208,8 +233,10 @@ add_subdirectory(src/nnet3)
+@@ -208,8 +237,10 @@ add_subdirectory(src/nnet3)
  add_subdirectory(src/rnnlm)
  add_subdirectory(src/chain)
  add_subdirectory(src/ivector)
@@ -121,7 +177,7 @@ index 8b2de3a..12e7f53 100644
  add_subdirectory(src/kws)
  
  add_subdirectory(src/itf)
-@@ -228,6 +255,7 @@ endif()
+@@ -228,6 +259,7 @@ endif()
  # add all native executables
  add_subdirectory(src/bin)
  add_subdirectory(src/gmmbin)
@@ -129,7 +185,7 @@ index 8b2de3a..12e7f53 100644
  add_subdirectory(src/featbin)
  add_subdirectory(src/sgmm2bin)
  add_subdirectory(src/fstbin)
-@@ -239,8 +267,10 @@ add_subdirectory(src/nnet3bin)
+@@ -239,8 +271,10 @@ add_subdirectory(src/nnet3bin)
  add_subdirectory(src/rnnlmbin)
  add_subdirectory(src/chainbin)
  add_subdirectory(src/ivectorbin)
@@ -142,7 +198,7 @@ index 8b2de3a..12e7f53 100644
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables
-@@ -249,19 +279,21 @@ if(CUDA_FOUND)
+@@ -249,19 +283,21 @@ if(CUDA_FOUND)
      add_subdirectory(src/cudadecoderbin)
  endif()
  
@@ -180,99 +236,1437 @@ index 8b2de3a..12e7f53 100644
 +    )
 +    install(EXPORT kaldi-targets DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/kaldi)
 +endif()
-\ No newline at end of file
+diff --git a/cmake/FindBLAS.cmake b/cmake/FindBLAS.cmake
+deleted file mode 100644
+index d00a975..0000000
+--- a/cmake/FindBLAS.cmake
++++ /dev/null
+@@ -1,902 +0,0 @@
+-# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
+-# file Copyright.txt or https://cmake.org/licensing for details.
+-
+-#[=======================================================================[.rst:
+-FindBLAS
+---------
+-
+-Find Basic Linear Algebra Subprograms (BLAS) library
+-
+-This module finds an installed Fortran library that implements the
+-BLAS linear-algebra interface (see http://www.netlib.org/blas/).
+-
+-The approach follows that taken for the ``autoconf`` macro file,
+-``acx_blas.m4`` (distributed at
+-http://ac-archive.sourceforge.net/ac-archive/acx_blas.html).
+-
+-Input Variables
+-^^^^^^^^^^^^^^^
+-
+-The following variables may be set to influence this module's behavior:
+-
+-``BLA_STATIC``
+-  if ``ON`` use static linkage
+-
+-``BLA_VENDOR``
+-  If set, checks only the specified vendor, if not set checks all the
+-  possibilities.  List of vendors valid in this module:
+-
+-  * ``Goto``
+-  * ``OpenBLAS``
+-  * ``FLAME``
+-  * ``ATLAS PhiPACK``
+-  * ``CXML``
+-  * ``DXML``
+-  * ``SunPerf``
+-  * ``SCSL``
+-  * ``SGIMATH``
+-  * ``IBMESSL``
+-  * ``Intel10_32`` (intel mkl v10 32 bit)
+-  * ``Intel10_64lp`` (intel mkl v10+ 64 bit, threaded code, lp64 model)
+-  * ``Intel10_64lp_seq`` (intel mkl v10+ 64 bit, sequential code, lp64 model)
+-  * ``Intel10_64ilp`` (intel mkl v10+ 64 bit, threaded code, ilp64 model)
+-  * ``Intel10_64ilp_seq`` (intel mkl v10+ 64 bit, sequential code, ilp64 model)
+-  * ``Intel10_64_dyn`` (intel mkl v10+ 64 bit, single dynamic library)
+-  * ``Intel`` (obsolete versions of mkl 32 and 64 bit)
+-  * ``ACML``
+-  * ``ACML_MP``
+-  * ``ACML_GPU``
+-  * ``Apple``
+-  * ``NAS``
+-  * ``Generic``
+-
+-``BLA_F95``
+-  if ``ON`` tries to find the BLAS95 interfaces
+-
+-``BLA_PREFER_PKGCONFIG``
+-  if set ``pkg-config`` will be used to search for a BLAS library first
+-  and if one is found that is preferred
+-
+-Result Variables
+-^^^^^^^^^^^^^^^^
+-
+-This module defines the following variables:
+-
+-``BLAS_FOUND``
+-  library implementing the BLAS interface is found
+-``BLAS_LINKER_FLAGS``
+-  uncached list of required linker flags (excluding ``-l`` and ``-L``).
+-``BLAS_LIBRARIES``
+-  uncached list of libraries (using full path name) to link against
+-  to use BLAS (may be empty if compiler implicitly links BLAS)
+-``BLAS95_LIBRARIES``
+-  uncached list of libraries (using full path name) to link against
+-  to use BLAS95 interface
+-``BLAS95_FOUND``
+-  library implementing the BLAS95 interface is found
+-
+-.. note::
+-
+-  C, CXX or Fortran must be enabled to detect a BLAS library.
+-  C or CXX must be enabled to use Intel Math Kernel Library (MKL).
+-
+-  For example, to use Intel MKL libraries and/or Intel compiler:
+-
+-  .. code-block:: cmake
+-
+-    set(BLA_VENDOR Intel10_64lp)
+-    find_package(BLAS)
+-
+-Hints
+-^^^^^
+-
+-Set the ``MKLROOT`` environment variable to a directory that contains an MKL
+-installation, or add the directory to the dynamic library loader environment
+-variable for your platform (``LIB``, ``DYLD_LIBRARY_PATH`` or
+-``LD_LIBRARY_PATH``).
+-
+-#]=======================================================================]
+-
+-# Check the language being used
+-if(NOT (CMAKE_C_COMPILER_LOADED OR CMAKE_CXX_COMPILER_LOADED OR CMAKE_Fortran_COMPILER_LOADED))
+-  if(BLAS_FIND_REQUIRED)
+-    message(FATAL_ERROR "FindBLAS requires Fortran, C, or C++ to be enabled.")
+-  else()
+-    message(STATUS "Looking for BLAS... - NOT found (Unsupported languages)")
+-    return()
+-  endif()
+-endif()
+-
+-if(CMAKE_Fortran_COMPILER_LOADED)
+-  include(CheckFortranFunctionExists)
+-else()
+-  include(CheckFunctionExists)
+-endif()
+-include(CMakePushCheckState)
+-include(FindPackageHandleStandardArgs)
+-cmake_push_check_state()
+-set(CMAKE_REQUIRED_QUIET ${BLAS_FIND_QUIETLY})
+-
+-if(BLA_PREFER_PKGCONFIG)
+-  find_package(PkgConfig)
+-  pkg_check_modules(PKGC_BLAS blas)
+-  if(PKGC_BLAS_FOUND)
+-    set(BLAS_FOUND ${PKGC_BLAS_FOUND})
+-    set(BLAS_LIBRARIES "${PKGC_BLAS_LINK_LIBRARIES}")
+-    return()
+-  endif()
+-endif()
+-
+-set(_blas_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+-if(BLA_STATIC)
+-  if(WIN32)
+-    set(CMAKE_FIND_LIBRARY_SUFFIXES .lib ${CMAKE_FIND_LIBRARY_SUFFIXES})
+-  else()
+-    set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+-  endif()
+-else()
+-  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+-    # for ubuntu's libblas3gf and liblapack3gf packages
+-    set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES} .so.3gf)
+-  endif()
+-endif()
+-
+-# TODO: move this stuff to a separate module
+-
+-macro(CHECK_BLAS_LIBRARIES LIBRARIES _prefix _name _flags _list _threadlibs _addlibdir _subdirs)
+-  # This macro checks for the existence of the combination of fortran libraries
+-  # given by _list.  If the combination is found, this macro checks (using the
+-  # Check_Fortran_Function_Exists macro) whether can link against that library
+-  # combination using the name of a routine given by _name using the linker
+-  # flags given by _flags.  If the combination of libraries is found and passes
+-  # the link test, LIBRARIES is set to the list of complete library paths that
+-  # have been found.  Otherwise, LIBRARIES is set to FALSE.
+-
+-  # N.B. _prefix is the prefix applied to the names of all cached variables that
+-  # are generated internally and marked advanced by this macro.
+-  # _addlibdir is a list of additional search paths. _subdirs is a list of path
+-  # suffixes to be used by find_library().
+-
+-  set(_libraries_work TRUE)
+-  set(${LIBRARIES})
+-  set(_combined_name)
+-
+-  set(_extaddlibdir "${_addlibdir}")
+-  if(WIN32)
+-    list(APPEND _extaddlibdir ENV LIB)
+-  elseif(APPLE)
+-    list(APPEND _extaddlibdir ENV DYLD_LIBRARY_PATH)
+-  else()
+-    list(APPEND _extaddlibdir ENV LD_LIBRARY_PATH)
+-  endif()
+-  list(APPEND _extaddlibdir "${CMAKE_C_IMPLICIT_LINK_DIRECTORIES}")
+-
+-  foreach(_library ${_list})
+-    if(_library MATCHES "^-Wl,--(start|end)-group$")
+-      # Respect linker flags like --start/end-group (required by MKL)
+-      set(${LIBRARIES} ${${LIBRARIES}} "${_library}")
+-    else()
+-      set(_combined_name ${_combined_name}_${_library})
+-      if(NOT "${_threadlibs}" STREQUAL "")
+-        set(_combined_name ${_combined_name}_threadlibs)
+-      endif()
+-      if(_libraries_work)
+-        find_library(${_prefix}_${_library}_LIBRARY
+-          NAMES ${_library}
+-          PATHS ${_extaddlibdir}
+-          PATH_SUFFIXES ${_subdirs}
+-        )
+-        #message("DEBUG: find_library(${_library}) got ${${_prefix}_${_library}_LIBRARY}")
+-        mark_as_advanced(${_prefix}_${_library}_LIBRARY)
+-        set(${LIBRARIES} ${${LIBRARIES}} ${${_prefix}_${_library}_LIBRARY})
+-        set(_libraries_work ${${_prefix}_${_library}_LIBRARY})
+-      endif()
+-    endif()
+-  endforeach()
+-
+-  if(_libraries_work)
+-    # Test this combination of libraries.
+-    set(CMAKE_REQUIRED_LIBRARIES ${_flags} ${${LIBRARIES}} ${_threadlibs})
+-    #message("DEBUG: CMAKE_REQUIRED_LIBRARIES = ${CMAKE_REQUIRED_LIBRARIES}")
+-    if(CMAKE_Fortran_COMPILER_LOADED)
+-      check_fortran_function_exists("${_name}" ${_prefix}${_combined_name}_WORKS)
+-    else()
+-      check_function_exists("${_name}_" ${_prefix}${_combined_name}_WORKS)
+-    endif()
+-    set(CMAKE_REQUIRED_LIBRARIES)
+-    set(_libraries_work ${${_prefix}${_combined_name}_WORKS})
+-  endif()
+-
+-  if(_libraries_work)
+-    if("${_list}" STREQUAL "")
+-      set(${LIBRARIES} "${LIBRARIES}-PLACEHOLDER-FOR-EMPTY-LIBRARIES")
+-    else()
+-      set(${LIBRARIES} ${${LIBRARIES}} ${_threadlibs})
+-    endif()
+-  else()
+-    set(${LIBRARIES} FALSE)
+-  endif()
+-  #message("DEBUG: ${LIBRARIES} = ${${LIBRARIES}}")
+-endmacro()
+-
+-set(BLAS_LINKER_FLAGS)
+-set(BLAS_LIBRARIES)
+-set(BLAS95_LIBRARIES)
+-if(NOT $ENV{BLA_VENDOR} STREQUAL "")
+-  set(BLA_VENDOR $ENV{BLA_VENDOR})
+-else()
+-  if(NOT BLA_VENDOR)
+-    set(BLA_VENDOR "All")
+-  endif()
+-endif()
+-
+-# Implicitly linked BLAS libraries?
+-if(BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      ""
+-      ""
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# BLAS in the Intel MKL 10+ library?
+-if(BLA_VENDOR MATCHES "Intel" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    if(CMAKE_C_COMPILER_LOADED OR CMAKE_CXX_COMPILER_LOADED)
+-      # System-specific settings
+-      if(WIN32)
+-        if(BLA_STATIC)
+-          set(BLAS_mkl_DLL_SUFFIX "")
+-        else()
+-          set(BLAS_mkl_DLL_SUFFIX "_dll")
+-        endif()
+-      else()
+-        if(BLA_STATIC)
+-          set(BLAS_mkl_START_GROUP "-Wl,--start-group")
+-          set(BLAS_mkl_END_GROUP "-Wl,--end-group")
+-        else()
+-          set(BLAS_mkl_START_GROUP "")
+-          set(BLAS_mkl_END_GROUP "")
+-        endif()
+-        # Switch to GNU Fortran support layer if needed (but not on Apple, where MKL does not provide it)
+-        if(CMAKE_Fortran_COMPILER_LOADED AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU" AND NOT APPLE)
+-            set(BLAS_mkl_INTFACE "gf")
+-            set(BLAS_mkl_THREADING "gnu")
+-            set(BLAS_mkl_OMP "gomp")
+-        else()
+-            set(BLAS_mkl_INTFACE "intel")
+-            set(BLAS_mkl_THREADING "intel")
+-            set(BLAS_mkl_OMP "iomp5")
+-        endif()
+-        set(BLAS_mkl_LM "-lm")
+-        set(BLAS_mkl_LDL "-ldl")
+-      endif()
+-
+-      if(BLAS_FIND_QUIETLY OR NOT BLAS_FIND_REQUIRED)
+-        find_package(Threads)
+-      else()
+-        find_package(Threads REQUIRED)
+-      endif()
+-
+-      if(BLA_VENDOR MATCHES "_64ilp")
+-        set(BLAS_mkl_ILP_MODE "ilp64")
+-      else()
+-        set(BLAS_mkl_ILP_MODE "lp64")
+-      endif()
+-
+-      set(BLAS_SEARCH_LIBS "")
+-
+-      if(BLA_F95)
+-        set(BLAS_mkl_SEARCH_SYMBOL "sgemm_f95")
+-        set(_LIBRARIES BLAS95_LIBRARIES)
+-        if(WIN32)
+-          # Find the main file (32-bit or 64-bit)
+-          set(BLAS_SEARCH_LIBS_WIN_MAIN "")
+-          if(BLA_VENDOR STREQUAL "Intel10_32" OR BLA_VENDOR STREQUAL "All")
+-            list(APPEND BLAS_SEARCH_LIBS_WIN_MAIN
+-              "mkl_blas95${BLAS_mkl_DLL_SUFFIX} mkl_intel_c${BLAS_mkl_DLL_SUFFIX}")
+-          endif()
+-
+-          if(BLA_VENDOR MATCHES "^Intel10_64i?lp" OR BLA_VENDOR STREQUAL "All")
+-            list(APPEND BLAS_SEARCH_LIBS_WIN_MAIN
+-              "mkl_blas95_${BLAS_mkl_ILP_MODE}${BLAS_mkl_DLL_SUFFIX} mkl_intel_${BLAS_mkl_ILP_MODE}${BLAS_mkl_DLL_SUFFIX}")
+-          endif()
+-
+-          # Add threading/sequential libs
+-          set(BLAS_SEARCH_LIBS_WIN_THREAD "")
+-          if(BLA_VENDOR MATCHES "^Intel10_64i?lp$" OR BLA_VENDOR STREQUAL "All")
+-            # old version
+-            list(APPEND BLAS_SEARCH_LIBS_WIN_THREAD
+-              "libguide40 mkl_intel_thread${BLAS_mkl_DLL_SUFFIX}")
+-            # mkl >= 10.3
+-            list(APPEND BLAS_SEARCH_LIBS_WIN_THREAD
+-              "libiomp5md mkl_intel_thread${BLAS_mkl_DLL_SUFFIX}")
+-          endif()
+-          if(BLA_VENDOR MATCHES "^Intel10_64i?lp_seq$" OR BLA_VENDOR STREQUAL "All")
+-            list(APPEND BLAS_SEARCH_LIBS_WIN_THREAD
+-              "mkl_sequential${BLAS_mkl_DLL_SUFFIX}")
+-          endif()
+-
+-          # Cartesian product of the above
+-          foreach(MAIN ${BLAS_SEARCH_LIBS_WIN_MAIN})
+-            foreach(THREAD ${BLAS_SEARCH_LIBS_WIN_THREAD})
+-              list(APPEND BLAS_SEARCH_LIBS
+-                "${MAIN} ${THREAD} mkl_core${BLAS_mkl_DLL_SUFFIX}")
+-            endforeach()
+-          endforeach()
+-        else()
+-          if(BLA_VENDOR STREQUAL "Intel10_32" OR BLA_VENDOR STREQUAL "All")
+-            # old version
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "mkl_blas95 mkl_${BLAS_mkl_INTFACE} mkl_${BLAS_mkl_THREADING}_thread mkl_core guide")
+-
+-            # mkl >= 10.3
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "${BLAS_mkl_START_GROUP} mkl_blas95 mkl_${BLAS_mkl_INTFACE} mkl_${BLAS_mkl_THREADING}_thread mkl_core ${BLAS_mkl_END_GROUP} ${BLAS_mkl_OMP}")
+-          endif()
+-          if(BLA_VENDOR MATCHES "^Intel10_64i?lp$" OR BLA_VENDOR STREQUAL "All")
+-            # old version
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "mkl_blas95 mkl_${BLAS_mkl_INTFACE}_${BLAS_mkl_ILP_MODE} mkl_${BLAS_mkl_THREADING}_thread mkl_core guide")
+-
+-            # mkl >= 10.3
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "${BLAS_mkl_START_GROUP} mkl_blas95_${BLAS_mkl_ILP_MODE} mkl_${BLAS_mkl_INTFACE}_${BLAS_mkl_ILP_MODE} mkl_${BLAS_mkl_THREADING}_thread mkl_core ${BLAS_mkl_END_GROUP} ${BLAS_mkl_OMP}")
+-          endif()
+-          if(BLA_VENDOR MATCHES "^Intel10_64i?lp_seq$" OR BLA_VENDOR STREQUAL "All")
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "${BLAS_mkl_START_GROUP} mkl_blas95_${BLAS_mkl_ILP_MODE} mkl_${BLAS_mkl_INTFACE}_${BLAS_mkl_ILP_MODE} mkl_sequential mkl_core ${BLAS_mkl_END_GROUP}")
+-          endif()
+-        endif()
+-      else()
+-        set(BLAS_mkl_SEARCH_SYMBOL sgemm)
+-        set(_LIBRARIES BLAS_LIBRARIES)
+-        if(WIN32)
+-          # Find the main file (32-bit or 64-bit)
+-          set(BLAS_SEARCH_LIBS_WIN_MAIN "")
+-          if(BLA_VENDOR STREQUAL "Intel10_32" OR BLA_VENDOR STREQUAL "All")
+-            list(APPEND BLAS_SEARCH_LIBS_WIN_MAIN
+-              "mkl_intel_c${BLAS_mkl_DLL_SUFFIX}")
+-          endif()
+-          if(BLA_VENDOR MATCHES "^Intel10_64i?lp" OR BLA_VENDOR STREQUAL "All")
+-            list(APPEND BLAS_SEARCH_LIBS_WIN_MAIN
+-              "mkl_intel_${BLAS_mkl_ILP_MODE}${BLAS_mkl_DLL_SUFFIX}")
+-          endif()
+-
+-          # Add threading/sequential libs
+-          set(BLAS_SEARCH_LIBS_WIN_THREAD "")
+-          if(BLA_VENDOR MATCHES "^Intel10_64i?lp$" OR BLA_VENDOR STREQUAL "All")
+-            # old version
+-            list(APPEND BLAS_SEARCH_LIBS_WIN_THREAD
+-              "libguide40 mkl_intel_thread${BLAS_mkl_DLL_SUFFIX}")
+-            # mkl >= 10.3
+-            list(APPEND BLAS_SEARCH_LIBS_WIN_THREAD
+-              "libiomp5md mkl_intel_thread${BLAS_mkl_DLL_SUFFIX}")
+-          endif()
+-          if(BLA_VENDOR MATCHES "^Intel10_64i?lp_seq$" OR BLA_VENDOR STREQUAL "All")
+-            list(APPEND BLAS_SEARCH_LIBS_WIN_THREAD
+-              "mkl_sequential${BLAS_mkl_DLL_SUFFIX}")
+-          endif()
+-
+-          # Cartesian product of the above
+-          foreach(MAIN ${BLAS_SEARCH_LIBS_WIN_MAIN})
+-            foreach(THREAD ${BLAS_SEARCH_LIBS_WIN_THREAD})
+-              list(APPEND BLAS_SEARCH_LIBS
+-                "${MAIN} ${THREAD} mkl_core${BLAS_mkl_DLL_SUFFIX}")
+-            endforeach()
+-          endforeach()
+-        else()
+-          if(BLA_VENDOR STREQUAL "Intel10_32" OR BLA_VENDOR STREQUAL "All")
+-            # old version
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "mkl_${BLAS_mkl_INTFACE} mkl_${BLAS_mkl_THREADING}_thread mkl_core guide")
+-
+-            # mkl >= 10.3
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "${BLAS_mkl_START_GROUP} mkl_${BLAS_mkl_INTFACE} mkl_${BLAS_mkl_THREADING}_thread mkl_core ${BLAS_mkl_END_GROUP} ${BLAS_mkl_OMP}")
+-          endif()
+-          if(BLA_VENDOR MATCHES "^Intel10_64i?lp$" OR BLA_VENDOR STREQUAL "All")
+-            # old version
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "mkl_${BLAS_mkl_INTFACE}_${BLAS_mkl_ILP_MODE} mkl_${BLAS_mkl_THREADING}_thread mkl_core guide")
+-
+-            # mkl >= 10.3
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "${BLAS_mkl_START_GROUP} mkl_${BLAS_mkl_INTFACE}_${BLAS_mkl_ILP_MODE} mkl_${BLAS_mkl_THREADING}_thread mkl_core ${BLAS_mkl_END_GROUP} ${BLAS_mkl_OMP}")
+-          endif()
+-          if(BLA_VENDOR MATCHES "^Intel10_64i?lp_seq$" OR BLA_VENDOR STREQUAL "All")
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "${BLAS_mkl_START_GROUP} mkl_${BLAS_mkl_INTFACE}_${BLAS_mkl_ILP_MODE} mkl_sequential mkl_core ${BLAS_mkl_END_GROUP}")
+-          endif()
+-
+-          #older vesions of intel mkl libs
+-          if(BLA_VENDOR STREQUAL "Intel" OR BLA_VENDOR STREQUAL "All")
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "mkl")
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "mkl_ia32")
+-            list(APPEND BLAS_SEARCH_LIBS
+-              "mkl_em64t")
+-          endif()
+-        endif()
+-      endif()
+-
+-      if(BLA_VENDOR MATCHES "^Intel10_64_dyn$" OR BLA_VENDOR STREQUAL "All")
+-        # mkl >= 10.3 with single dynamic library
+-        list(APPEND BLAS_SEARCH_LIBS
+-          "mkl_rt")
+-      endif()
+-
+-      # MKL uses a multitude of partially platform-specific subdirectories:
+-      if(BLA_VENDOR STREQUAL "Intel10_32")
+-        set(BLAS_mkl_ARCH_NAME "ia32")
+-      else()
+-        set(BLAS_mkl_ARCH_NAME "intel64")
+-      endif()
+-      if(WIN32)
+-        set(BLAS_mkl_OS_NAME "win")
+-      elseif(APPLE)
+-        set(BLAS_mkl_OS_NAME "mac")
+-      else()
+-        set(BLAS_mkl_OS_NAME "lin")
+-      endif()
+-      if(DEFINED ENV{MKLROOT})
+-        set(BLAS_mkl_MKLROOT "$ENV{MKLROOT}")
+-        # If MKLROOT points to the subdirectory 'mkl', use the parent directory instead
+-        # so we can better detect other relevant libraries in 'compiler' or 'tbb':
+-        get_filename_component(BLAS_mkl_MKLROOT_LAST_DIR "${BLAS_mkl_MKLROOT}" NAME)
+-        if(BLAS_mkl_MKLROOT_LAST_DIR STREQUAL "mkl")
+-            get_filename_component(BLAS_mkl_MKLROOT "${BLAS_mkl_MKLROOT}" DIRECTORY)
+-        endif()
+-      endif()
+-      set(BLAS_mkl_LIB_PATH_SUFFIXES
+-          "compiler/lib" "compiler/lib/${BLAS_mkl_ARCH_NAME}_${BLAS_mkl_OS_NAME}"
+-          "mkl/lib" "mkl/lib/${BLAS_mkl_ARCH_NAME}_${BLAS_mkl_OS_NAME}"
+-          "lib/${BLAS_mkl_ARCH_NAME}_${BLAS_mkl_OS_NAME}")
+-
+-      foreach(IT ${BLAS_SEARCH_LIBS})
+-        string(REPLACE " " ";" SEARCH_LIBS ${IT})
+-        if(NOT ${_LIBRARIES})
+-          check_blas_libraries(
+-            ${_LIBRARIES}
+-            BLAS
+-            ${BLAS_mkl_SEARCH_SYMBOL}
+-            ""
+-            "${SEARCH_LIBS}"
+-            "${CMAKE_THREAD_LIBS_INIT};${BLAS_mkl_LM};${BLAS_mkl_LDL}"
+-            "${BLAS_mkl_MKLROOT}"
+-            "${BLAS_mkl_LIB_PATH_SUFFIXES}"
+-            )
+-        endif()
+-      endforeach()
+-
+-      unset(BLAS_mkl_ILP_MODE)
+-      unset(BLAS_mkl_INTFACE)
+-      unset(BLAS_mkl_THREADING)
+-      unset(BLAS_mkl_OMP)
+-      unset(BLAS_mkl_DLL_SUFFIX)
+-      unset(BLAS_mkl_LM)
+-      unset(BLAS_mkl_LDL)
+-      unset(BLAS_mkl_MKLROOT)
+-      unset(BLAS_mkl_MKLROOT_LAST_DIR)
+-      unset(BLAS_mkl_ARCH_NAME)
+-      unset(BLAS_mkl_OS_NAME)
+-      unset(BLAS_mkl_LIB_PATH_SUFFIXES)
+-    endif()
+-  endif()
+-endif()
+-
+-if(BLA_F95)
+-  find_package_handle_standard_args(BLAS REQUIRED_VARS BLAS95_LIBRARIES)
+-  set(BLAS95_FOUND ${BLAS_FOUND})
+-  if(BLAS_FOUND)
+-    set(BLAS_LIBRARIES "${BLAS95_LIBRARIES}")
+-  endif()
+-endif()
+-
+-# gotoblas? (http://www.tacc.utexas.edu/tacc-projects/gotoblas2)
+-if(BLA_VENDOR STREQUAL "Goto" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      ""
+-      "goto2"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# OpenBLAS? (http://www.openblas.net)
+-if(BLA_VENDOR STREQUAL "OpenBLAS" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      ""
+-      "openblas"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-  if(NOT BLAS_LIBRARIES AND (CMAKE_C_COMPILER_LOADED OR CMAKE_CXX_COMPILER_LOADED))
+-    if(BLAS_FIND_QUIETLY OR NOT BLAS_FIND_REQUIRED)
+-      find_package(Threads)
+-    else()
+-      find_package(Threads REQUIRED)
+-    endif()
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      ""
+-      "openblas"
+-      "${CMAKE_THREAD_LIBS_INIT}"
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# FLAME's blis library? (https://github.com/flame/blis)
+-if(BLA_VENDOR STREQUAL "FLAME" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      ""
+-      "blis"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# BLAS in the ATLAS library? (http://math-atlas.sourceforge.net/)
+-if(BLA_VENDOR STREQUAL "ATLAS" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      dgemm
+-      ""
+-      "blas;f77blas;atlas"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# BLAS in PhiPACK libraries? (requires generic BLAS lib, too)
+-if(BLA_VENDOR STREQUAL "PhiPACK" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      ""
+-      "sgemm;dgemm;blas"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# BLAS in Alpha CXML library?
+-if(BLA_VENDOR STREQUAL "CXML" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      ""
+-      "cxml"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# BLAS in Alpha DXML library? (now called CXML, see above)
+-if(BLA_VENDOR STREQUAL "DXML" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      ""
+-      "dxml"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# BLAS in Sun Performance library?
+-if(BLA_VENDOR STREQUAL "SunPerf" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      "-xlic_lib=sunperf"
+-      "sunperf;sunmath"
+-      ""
+-      ""
+-      ""
+-      )
+-    if(BLAS_LIBRARIES)
+-      set(BLAS_LINKER_FLAGS "-xlic_lib=sunperf")
+-    endif()
+-  endif()
+-endif()
+-
+-# BLAS in SCSL library?  (SGI/Cray Scientific Library)
+-if(BLA_VENDOR STREQUAL "SCSL" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      ""
+-      "scsl"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# BLAS in SGIMATH library?
+-if(BLA_VENDOR STREQUAL "SGIMATH" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      ""
+-      "complib.sgimath"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# BLAS in IBM ESSL library? (requires generic BLAS lib, too)
+-if(BLA_VENDOR STREQUAL "IBMESSL" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      ""
+-      "essl;blas"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# BLAS in acml library?
+-if(BLA_VENDOR MATCHES "ACML" OR BLA_VENDOR STREQUAL "All")
+-  if(((BLA_VENDOR STREQUAL "ACML") AND (NOT BLAS_ACML_LIB_DIRS)) OR
+-    ((BLA_VENDOR STREQUAL "ACML_MP") AND (NOT BLAS_ACML_MP_LIB_DIRS)) OR
+-    ((BLA_VENDOR STREQUAL "ACML_GPU") AND (NOT BLAS_ACML_GPU_LIB_DIRS))
+-    )
+-  # try to find acml in "standard" paths
+-  if(WIN32)
+-    file(GLOB _ACML_ROOT "C:/AMD/acml*/ACML-EULA.txt")
+-  else()
+-    file(GLOB _ACML_ROOT "/opt/acml*/ACML-EULA.txt")
+-  endif()
+-  if(WIN32)
+-    file(GLOB _ACML_GPU_ROOT "C:/AMD/acml*/GPGPUexamples")
+-  else()
+-    file(GLOB _ACML_GPU_ROOT "/opt/acml*/GPGPUexamples")
+-  endif()
+-  list(GET _ACML_ROOT 0 _ACML_ROOT)
+-  list(GET _ACML_GPU_ROOT 0 _ACML_GPU_ROOT)
+-  if(_ACML_ROOT)
+-    get_filename_component(_ACML_ROOT ${_ACML_ROOT} PATH)
+-    if(SIZEOF_INTEGER EQUAL 8)
+-      set(_ACML_PATH_SUFFIX "_int64")
+-    else()
+-      set(_ACML_PATH_SUFFIX "")
+-    endif()
+-    if(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+-      set(_ACML_COMPILER32 "ifort32")
+-      set(_ACML_COMPILER64 "ifort64")
+-    elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "SunPro")
+-      set(_ACML_COMPILER32 "sun32")
+-      set(_ACML_COMPILER64 "sun64")
+-    elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "PGI")
+-      set(_ACML_COMPILER32 "pgi32")
+-      if(WIN32)
+-        set(_ACML_COMPILER64 "win64")
+-      else()
+-        set(_ACML_COMPILER64 "pgi64")
+-      endif()
+-    elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Open64")
+-      # 32 bit builds not supported on Open64 but for code simplicity
+-      # We'll just use the same directory twice
+-      set(_ACML_COMPILER32 "open64_64")
+-      set(_ACML_COMPILER64 "open64_64")
+-    elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "NAG")
+-      set(_ACML_COMPILER32 "nag32")
+-      set(_ACML_COMPILER64 "nag64")
+-    else()
+-      set(_ACML_COMPILER32 "gfortran32")
+-      set(_ACML_COMPILER64 "gfortran64")
+-    endif()
+-
+-    if(BLA_VENDOR STREQUAL "ACML_MP")
+-      set(_ACML_MP_LIB_DIRS
+-        "${_ACML_ROOT}/${_ACML_COMPILER32}_mp${_ACML_PATH_SUFFIX}/lib"
+-        "${_ACML_ROOT}/${_ACML_COMPILER64}_mp${_ACML_PATH_SUFFIX}/lib")
+-    else()
+-      set(_ACML_LIB_DIRS
+-        "${_ACML_ROOT}/${_ACML_COMPILER32}${_ACML_PATH_SUFFIX}/lib"
+-        "${_ACML_ROOT}/${_ACML_COMPILER64}${_ACML_PATH_SUFFIX}/lib")
+-    endif()
+-  endif()
+-elseif(BLAS_${BLA_VENDOR}_LIB_DIRS)
+-  set(_${BLA_VENDOR}_LIB_DIRS ${BLAS_${BLA_VENDOR}_LIB_DIRS})
+-endif()
+-
+-if(BLA_VENDOR STREQUAL "ACML_MP")
+-  foreach(BLAS_ACML_MP_LIB_DIRS ${_ACML_MP_LIB_DIRS})
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      "" "acml_mp;acml_mv" "" ${BLAS_ACML_MP_LIB_DIRS} ""
+-      )
+-    if(BLAS_LIBRARIES)
+-      break()
+-    endif()
+-  endforeach()
+-elseif(BLA_VENDOR STREQUAL "ACML_GPU")
+-  foreach(BLAS_ACML_GPU_LIB_DIRS ${_ACML_GPU_LIB_DIRS})
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      "" "acml;acml_mv;CALBLAS" "" ${BLAS_ACML_GPU_LIB_DIRS} ""
+-      )
+-    if(BLAS_LIBRARIES)
+-      break()
+-    endif()
+-  endforeach()
+-else()
+-  foreach(BLAS_ACML_LIB_DIRS ${_ACML_LIB_DIRS})
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      "" "acml;acml_mv" "" ${BLAS_ACML_LIB_DIRS} ""
+-      )
+-    if(BLAS_LIBRARIES)
+-      break()
+-    endif()
+-  endforeach()
+-endif()
+-
+-# Either acml or acml_mp should be in LD_LIBRARY_PATH but not both
+-if(NOT BLAS_LIBRARIES)
+-  check_blas_libraries(
+-    BLAS_LIBRARIES
+-    BLAS
+-    sgemm
+-    ""
+-    "acml;acml_mv"
+-    ""
+-    ""
+-    ""
+-    )
+-endif()
+-if(NOT BLAS_LIBRARIES)
+-  check_blas_libraries(
+-    BLAS_LIBRARIES
+-    BLAS
+-    sgemm
+-    ""
+-    "acml_mp;acml_mv"
+-    ""
+-    ""
+-    ""
+-    )
+-endif()
+-if(NOT BLAS_LIBRARIES)
+-  check_blas_libraries(
+-    BLAS_LIBRARIES
+-    BLAS
+-    sgemm
+-    ""
+-    "acml;acml_mv;CALBLAS"
+-    ""
+-    ""
+-    ""
+-    )
+-endif()
+-endif() # ACML
+-
+-# Apple BLAS library?
+-if(BLA_VENDOR STREQUAL "Apple" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      dgemm
+-      ""
+-      "Accelerate"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# Apple NAS (vecLib) library?
+-if(BLA_VENDOR STREQUAL "NAS" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      dgemm
+-      ""
+-      "vecLib"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-# Generic BLAS library?
+-if(BLA_VENDOR STREQUAL "Generic" OR BLA_VENDOR STREQUAL "All")
+-  if(NOT BLAS_LIBRARIES)
+-    check_blas_libraries(
+-      BLAS_LIBRARIES
+-      BLAS
+-      sgemm
+-      ""
+-      "blas"
+-      ""
+-      ""
+-      ""
+-      )
+-  endif()
+-endif()
+-
+-if(NOT BLA_F95)
+-  find_package_handle_standard_args(BLAS REQUIRED_VARS BLAS_LIBRARIES)
+-endif()
+-
+-# On compilers that implicitly link BLAS (such as ftn, cc, and CC on Cray HPC machines)
+-# we used a placeholder for empty BLAS_LIBRARIES to get through our logic above.
+-if(BLAS_LIBRARIES STREQUAL "BLAS_LIBRARIES-PLACEHOLDER-FOR-EMPTY-LIBRARIES")
+-  set(BLAS_LIBRARIES "")
+-endif()
+-
+-cmake_pop_check_state()
+-set(CMAKE_FIND_LIBRARY_SUFFIXES ${_blas_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
+diff --git a/cmake/FindLAPACK.cmake b/cmake/FindLAPACK.cmake
+deleted file mode 100644
+index 017a29d..0000000
+--- a/cmake/FindLAPACK.cmake
++++ /dev/null
+@@ -1,496 +0,0 @@
+-# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
+-# file Copyright.txt or https://cmake.org/licensing for details.
+-
+-#[=======================================================================[.rst:
+-FindLAPACK
+-----------
+-
+-Find Linear Algebra PACKage (LAPACK) library
+-
+-This module finds an installed Fortran library that implements the
+-LAPACK linear-algebra interface (see http://www.netlib.org/lapack/).
+-
+-The approach follows that taken for the ``autoconf`` macro file,
+-``acx_lapack.m4`` (distributed at
+-http://ac-archive.sourceforge.net/ac-archive/acx_lapack.html).
+-
+-Input Variables
+-^^^^^^^^^^^^^^^
+-
+-The following variables may be set to influence this module's behavior:
+-
+-``BLA_STATIC``
+-  if ``ON`` use static linkage
+-
+-``BLA_VENDOR``
+-  If set, checks only the specified vendor, if not set checks all the
+-  possibilities.  List of vendors valid in this module:
+-
+-  * ``OpenBLAS``
+-  * ``FLAME``
+-  * ``Intel10_32`` (intel mkl v10 32 bit)
+-  * ``Intel10_64lp`` (intel mkl v10+ 64 bit, threaded code, lp64 model)
+-  * ``Intel10_64lp_seq`` (intel mkl v10+ 64 bit, sequential code, lp64 model)
+-  * ``Intel10_64ilp`` (intel mkl v10+ 64 bit, threaded code, ilp64 model)
+-  * ``Intel10_64ilp_seq`` (intel mkl v10+ 64 bit, sequential code, ilp64 model)
+-  * ``Intel10_64_dyn`` (intel mkl v10+ 64 bit, single dynamic library)
+-  * ``Intel`` (obsolete versions of mkl 32 and 64 bit)
+-  * ``ACML``
+-  * ``Apple``
+-  * ``NAS``
+-  * ``Generic``
+-
+-``BLA_F95``
+-  if ``ON`` tries to find the BLAS95/LAPACK95 interfaces
+-
+-Result Variables
+-^^^^^^^^^^^^^^^^
+-
+-This module defines the following variables:
+-
+-``LAPACK_FOUND``
+-  library implementing the LAPACK interface is found
+-``LAPACK_LINKER_FLAGS``
+-  uncached list of required linker flags (excluding ``-l`` and ``-L``).
+-``LAPACK_LIBRARIES``
+-  uncached list of libraries (using full path name) to link against
+-  to use LAPACK
+-``LAPACK95_LIBRARIES``
+-  uncached list of libraries (using full path name) to link against
+-  to use LAPACK95
+-``LAPACK95_FOUND``
+-  library implementing the LAPACK95 interface is found
+-
+-.. note::
+-
+-  C, CXX or Fortran must be enabled to detect a BLAS/LAPACK library.
+-  C or CXX must be enabled to use Intel Math Kernel Library (MKL).
+-
+-  For example, to use Intel MKL libraries and/or Intel compiler:
+-
+-  .. code-block:: cmake
+-
+-    set(BLA_VENDOR Intel10_64lp)
+-    find_package(LAPACK)
+-#]=======================================================================]
+-
+-# Check the language being used
+-if(NOT (CMAKE_C_COMPILER_LOADED OR CMAKE_CXX_COMPILER_LOADED OR CMAKE_Fortran_COMPILER_LOADED))
+-  if(LAPACK_FIND_REQUIRED)
+-    message(FATAL_ERROR "FindLAPACK requires Fortran, C, or C++ to be enabled.")
+-  else()
+-    message(STATUS "Looking for LAPACK... - NOT found (Unsupported languages)")
+-    return()
+-  endif()
+-endif()
+-
+-if(CMAKE_Fortran_COMPILER_LOADED)
+-  include(CheckFortranFunctionExists)
+-else()
+-  include(CheckFunctionExists)
+-endif()
+-include(CMakePushCheckState)
+-
+-cmake_push_check_state()
+-set(CMAKE_REQUIRED_QUIET ${LAPACK_FIND_QUIETLY})
+-
+-set(LAPACK_FOUND FALSE)
+-set(LAPACK95_FOUND FALSE)
+-
+-set(_lapack_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+-if(BLA_STATIC)
+-  if(WIN32)
+-    set(CMAKE_FIND_LIBRARY_SUFFIXES .lib ${CMAKE_FIND_LIBRARY_SUFFIXES})
+-  else()
+-    set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+-  endif()
+-else()
+-  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+-    # for ubuntu's libblas3gf and liblapack3gf packages
+-    set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES} .so.3gf)
+-  endif()
+-endif()
+-
+-# TODO: move this stuff to a separate module
+-
+-macro(CHECK_LAPACK_LIBRARIES LIBRARIES _prefix _name _flags _list _threadlibs _addlibdir _subdirs _blas)
+-  # This macro checks for the existence of the combination of fortran libraries
+-  # given by _list.  If the combination is found, this macro checks (using the
+-  # Check_Fortran_Function_Exists macro) whether can link against that library
+-  # combination using the name of a routine given by _name using the linker
+-  # flags given by _flags.  If the combination of libraries is found and passes
+-  # the link test, LIBRARIES is set to the list of complete library paths that
+-  # have been found.  Otherwise, LIBRARIES is set to FALSE.
+-
+-  # N.B. _prefix is the prefix applied to the names of all cached variables that
+-  # are generated internally and marked advanced by this macro.
+-  # _addlibdir is a list of additional search paths. _subdirs is a list of path
+-  # suffixes to be used by find_library().
+-
+-  set(_libraries_work TRUE)
+-  set(${LIBRARIES})
+-  set(_combined_name)
+-
+-  set(_extaddlibdir "${_addlibdir}")
+-  if(WIN32)
+-    list(APPEND _extaddlibdir ENV LIB)
+-  elseif(APPLE)
+-    list(APPEND _extaddlibdir ENV DYLD_LIBRARY_PATH)
+-  else()
+-    list(APPEND _extaddlibdir ENV LD_LIBRARY_PATH)
+-  endif()
+-  list(APPEND _extaddlibdir "${CMAKE_C_IMPLICIT_LINK_DIRECTORIES}")
+-
+-  foreach(_library ${_list})
+-    if(_library MATCHES "^-Wl,--(start|end)-group$")
+-      # Respect linker flags like --start/end-group (required by MKL)
+-      set(${LIBRARIES} ${${LIBRARIES}} "${_library}")
+-    else()
+-      set(_combined_name ${_combined_name}_${_library})
+-      if(_libraries_work)
+-        find_library(${_prefix}_${_library}_LIBRARY
+-          NAMES ${_library}
+-          PATHS ${_extaddlibdir}
+-          PATH_SUFFIXES ${_subdirs}
+-        )
+-        #message("DEBUG: find_library(${_library}) got ${${_prefix}_${_library}_LIBRARY}")
+-        mark_as_advanced(${_prefix}_${_library}_LIBRARY)
+-        set(${LIBRARIES} ${${LIBRARIES}} ${${_prefix}_${_library}_LIBRARY})
+-        set(_libraries_work ${${_prefix}_${_library}_LIBRARY})
+-      endif()
+-    endif()
+-  endforeach()
+-
+-  if(_libraries_work)
+-    # Test this combination of libraries.
+-    set(CMAKE_REQUIRED_LIBRARIES ${_flags} ${${LIBRARIES}} ${_blas} ${_threadlibs})
+-    #message("DEBUG: CMAKE_REQUIRED_LIBRARIES = ${CMAKE_REQUIRED_LIBRARIES}")
+-    if(CMAKE_Fortran_COMPILER_LOADED)
+-      check_fortran_function_exists("${_name}" ${_prefix}${_combined_name}_WORKS)
+-    else()
+-      check_function_exists("${_name}_" ${_prefix}${_combined_name}_WORKS)
+-    endif()
+-    set(CMAKE_REQUIRED_LIBRARIES)
+-    set(_libraries_work ${${_prefix}${_combined_name}_WORKS})
+-  endif()
+-
+-  if(_libraries_work)
+-    if("${_list}${_blas}" STREQUAL "")
+-      set(${LIBRARIES} "${LIBRARIES}-PLACEHOLDER-FOR-EMPTY-LIBRARIES")
+-    else()
+-      set(${LIBRARIES} ${${LIBRARIES}} ${_blas} ${_threadlibs})
+-    endif()
+-  else()
+-    set(${LIBRARIES} FALSE)
+-  endif()
+-  #message("DEBUG: ${LIBRARIES} = ${${LIBRARIES}}")
+-endmacro()
+-
+-set(LAPACK_LINKER_FLAGS)
+-set(LAPACK_LIBRARIES)
+-set(LAPACK95_LIBRARIES)
+-
+-if(LAPACK_FIND_QUIETLY OR NOT LAPACK_FIND_REQUIRED)
+-  find_package(BLAS)
+-else()
+-  find_package(BLAS REQUIRED)
+-endif()
+-
+-if(BLAS_FOUND)
+-  set(LAPACK_LINKER_FLAGS ${BLAS_LINKER_FLAGS})
+-  if(NOT $ENV{BLA_VENDOR} STREQUAL "")
+-    set(BLA_VENDOR $ENV{BLA_VENDOR})
+-  else()
+-    if(NOT BLA_VENDOR)
+-      set(BLA_VENDOR "All")
+-    endif()
+-  endif()
+-
+-  # LAPACK in the Intel MKL 10+ library?
+-  if(BLA_VENDOR MATCHES "Intel" OR BLA_VENDOR STREQUAL "All")
+-    if(NOT LAPACK_LIBRARIES)
+-      if(CMAKE_C_COMPILER_LOADED OR CMAKE_CXX_COMPILER_LOADED)
+-        # System-specific settings
+-        if(NOT WIN32)
+-          set(LAPACK_mkl_LM "-lm")
+-          set(LAPACK_mkl_LDL "-ldl")
+-        endif()
+-
+-        if(LAPACK_FIND_QUIETLY OR NOT LAPACK_FIND_REQUIRED)
+-          find_package(Threads)
+-        else()
+-          find_package(Threads REQUIRED)
+-        endif()
+-
+-        if(BLA_VENDOR MATCHES "_64ilp")
+-          set(LAPACK_mkl_ILP_MODE "ilp64")
+-        else()
+-          set(LAPACK_mkl_ILP_MODE "lp64")
+-        endif()
+-
+-        set(LAPACK_SEARCH_LIBS "")
+-
+-        if(BLA_F95)
+-          set(LAPACK_mkl_SEARCH_SYMBOL "cheev_f95")
+-          set(_LIBRARIES LAPACK95_LIBRARIES)
+-          set(_BLAS_LIBRARIES ${BLAS95_LIBRARIES})
+-
+-          # old
+-          list(APPEND LAPACK_SEARCH_LIBS
+-            "mkl_lapack95")
+-          # new >= 10.3
+-          list(APPEND LAPACK_SEARCH_LIBS
+-            "mkl_intel_c")
+-          list(APPEND LAPACK_SEARCH_LIBS
+-            "mkl_lapack95_${LAPACK_mkl_ILP_MODE}")
+-        else()
+-          set(LAPACK_mkl_SEARCH_SYMBOL "cheev")
+-          set(_LIBRARIES LAPACK_LIBRARIES)
+-          set(_BLAS_LIBRARIES ${BLAS_LIBRARIES})
+-
+-          # old and new >= 10.3
+-          list(APPEND LAPACK_SEARCH_LIBS
+-            "mkl_lapack")
+-        endif()
+-
+-        # MKL uses a multitude of partially platform-specific subdirectories:
+-        if(BLA_VENDOR STREQUAL "Intel10_32")
+-          set(LAPACK_mkl_ARCH_NAME "ia32")
+-        else()
+-          set(LAPACK_mkl_ARCH_NAME "intel64")
+-        endif()
+-        if(WIN32)
+-          set(LAPACK_mkl_OS_NAME "win")
+-        elseif(APPLE)
+-          set(LAPACK_mkl_OS_NAME "mac")
+-        else()
+-          set(LAPACK_mkl_OS_NAME "lin")
+-        endif()
+-        if(DEFINED ENV{MKLROOT})
+-          set(LAPACK_mkl_MKLROOT "$ENV{MKLROOT}")
+-          # If MKLROOT points to the subdirectory 'mkl', use the parent directory instead
+-          # so we can better detect other relevant libraries in 'compiler' or 'tbb':
+-          get_filename_component(LAPACK_mkl_MKLROOT_LAST_DIR "${LAPACK_mkl_MKLROOT}" NAME)
+-          if(LAPACK_mkl_MKLROOT_LAST_DIR STREQUAL "mkl")
+-              get_filename_component(LAPACK_mkl_MKLROOT "${LAPACK_mkl_MKLROOT}" DIRECTORY)
+-          endif()
+-        endif()
+-        set(LAPACK_mkl_LIB_PATH_SUFFIXES
+-            "compiler/lib" "compiler/lib/${LAPACK_mkl_ARCH_NAME}_${LAPACK_mkl_OS_NAME}"
+-            "mkl/lib" "mkl/lib/${LAPACK_mkl_ARCH_NAME}_${LAPACK_mkl_OS_NAME}"
+-            "lib/${LAPACK_mkl_ARCH_NAME}_${LAPACK_mkl_OS_NAME}")
+-
+-        # First try empty lapack libs
+-        if(NOT ${_LIBRARIES})
+-          check_lapack_libraries(
+-            ${_LIBRARIES}
+-            LAPACK
+-            ${LAPACK_mkl_SEARCH_SYMBOL}
+-            ""
+-            ""
+-            "${CMAKE_THREAD_LIBS_INIT};${LAPACK_mkl_LM};${LAPACK_mkl_LDL}"
+-            "${LAPACK_mkl_MKLROOT}"
+-            "${LAPACK_mkl_LIB_PATH_SUFFIXES}"
+-            "${_BLAS_LIBRARIES}"
+-          )
+-        endif()
+-
+-        # Then try the search libs
+-        foreach(IT ${LAPACK_SEARCH_LIBS})
+-          string(REPLACE " " ";" SEARCH_LIBS ${IT})
+-          if(NOT ${_LIBRARIES})
+-            check_lapack_libraries(
+-              ${_LIBRARIES}
+-              LAPACK
+-              ${LAPACK_mkl_SEARCH_SYMBOL}
+-              ""
+-              "${SEARCH_LIBS}"
+-              "${CMAKE_THREAD_LIBS_INIT};${LAPACK_mkl_LM};${LAPACK_mkl_LDL}"
+-              "${LAPACK_mkl_MKLROOT}"
+-              "${LAPACK_mkl_LIB_PATH_SUFFIXES}"
+-              "${_BLAS_LIBRARIES}"
+-            )
+-          endif()
+-        endforeach()
+-
+-        unset(LAPACK_mkl_ILP_MODE)
+-        unset(LAPACK_mkl_SEARCH_SYMBOL)
+-        unset(LAPACK_mkl_LM)
+-        unset(LAPACK_mkl_LDL)
+-        unset(LAPACK_mkl_MKLROOT)
+-        unset(LAPACK_mkl_ARCH_NAME)
+-        unset(LAPACK_mkl_OS_NAME)
+-        unset(LAPACK_mkl_LIB_PATH_SUFFIXES)
+-      endif()
+-    endif()
+-  endif()
+-
+-  # gotoblas? (http://www.tacc.utexas.edu/tacc-projects/gotoblas2)
+-  if(BLA_VENDOR STREQUAL "Goto" OR BLA_VENDOR STREQUAL "All")
+-    if(NOT LAPACK_LIBRARIES)
+-      check_lapack_libraries(
+-        LAPACK_LIBRARIES
+-        LAPACK
+-        cheev
+-        ""
+-        "goto2"
+-        ""
+-        ""
+-        ""
+-        "${BLAS_LIBRARIES}"
+-      )
+-    endif()
+-  endif()
+-
+-  # OpenBLAS? (http://www.openblas.net)
+-  if(BLA_VENDOR STREQUAL "OpenBLAS" OR BLA_VENDOR STREQUAL "All")
+-    if(NOT LAPACK_LIBRARIES)
+-      check_lapack_libraries(
+-        LAPACK_LIBRARIES
+-        LAPACK
+-        cheev
+-        ""
+-        "openblas"
+-        ""
+-        ""
+-        ""
+-        "${BLAS_LIBRARIES}"
+-      )
+-    endif()
+-  endif()
+-
+-  # FLAME's blis library? (https://github.com/flame/blis)
+-  if(BLA_VENDOR STREQUAL "FLAME" OR BLA_VENDOR STREQUAL "All")
+-    if(NOT LAPACK_LIBRARIES)
+-      check_lapack_libraries(
+-        LAPACK_LIBRARIES
+-        LAPACK
+-        cheev
+-        ""
+-        "flame"
+-        ""
+-        ""
+-        ""
+-        "${BLAS_LIBRARIES}"
+-      )
+-    endif()
+-  endif()
+-
+-  # BLAS in acml library?
+-  if(BLA_VENDOR MATCHES "ACML" OR BLA_VENDOR STREQUAL "All")
+-    if(BLAS_LIBRARIES MATCHES ".+acml.+")
+-      set(LAPACK_LIBRARIES ${BLAS_LIBRARIES})
+-    endif()
+-  endif()
+-
+-  # Apple LAPACK library?
+-  if(BLA_VENDOR STREQUAL "Apple" OR BLA_VENDOR STREQUAL "All")
+-    if(NOT LAPACK_LIBRARIES)
+-      check_lapack_libraries(
+-        LAPACK_LIBRARIES
+-        LAPACK
+-        cheev
+-        ""
+-        "Accelerate"
+-        ""
+-        ""
+-        ""
+-        "${BLAS_LIBRARIES}"
+-      )
+-    endif()
+-  endif()
+-
+-  # Apple NAS (vecLib) library?
+-  if(BLA_VENDOR STREQUAL "NAS" OR BLA_VENDOR STREQUAL "All")
+-    if(NOT LAPACK_LIBRARIES)
+-      check_lapack_libraries(
+-        LAPACK_LIBRARIES
+-        LAPACK
+-        cheev
+-        ""
+-        "vecLib"
+-        ""
+-        ""
+-        ""
+-        "${BLAS_LIBRARIES}"
+-      )
+-    endif()
+-  endif()
+-
+-  # Generic LAPACK library?
+-  if(BLA_VENDOR STREQUAL "Generic" OR
+-      BLA_VENDOR STREQUAL "ATLAS" OR
+-      BLA_VENDOR STREQUAL "All")
+-    if(NOT LAPACK_LIBRARIES)
+-      check_lapack_libraries(
+-        LAPACK_LIBRARIES
+-        LAPACK
+-        cheev
+-        ""
+-        "lapack"
+-        ""
+-        ""
+-        ""
+-        "${BLAS_LIBRARIES}"
+-      )
+-    endif()
+-  endif()
+-else()
+-  message(STATUS "LAPACK requires BLAS")
+-endif()
+-
+-if(BLA_F95)
+-  if(LAPACK95_LIBRARIES)
+-    set(LAPACK95_FOUND TRUE)
+-  else()
+-    set(LAPACK95_FOUND FALSE)
+-  endif()
+-  if(NOT LAPACK_FIND_QUIETLY)
+-    if(LAPACK95_FOUND)
+-      message(STATUS "A library with LAPACK95 API found.")
+-    else()
+-      if(LAPACK_FIND_REQUIRED)
+-        message(FATAL_ERROR
+-          "A required library with LAPACK95 API not found. Please specify library location."
+-        )
+-      else()
+-        message(STATUS
+-          "A library with LAPACK95 API not found. Please specify library location."
+-        )
+-      endif()
+-    endif()
+-  endif()
+-  set(LAPACK_FOUND "${LAPACK95_FOUND}")
+-  set(LAPACK_LIBRARIES "${LAPACK95_LIBRARIES}")
+-else()
+-  if(LAPACK_LIBRARIES)
+-    set(LAPACK_FOUND TRUE)
+-  else()
+-    set(LAPACK_FOUND FALSE)
+-  endif()
+-
+-  if(NOT LAPACK_FIND_QUIETLY)
+-    if(LAPACK_FOUND)
+-      message(STATUS "A library with LAPACK API found.")
+-    else()
+-      if(LAPACK_FIND_REQUIRED)
+-        message(FATAL_ERROR
+-          "A required library with LAPACK API not found. Please specify library location."
+-        )
+-      else()
+-        message(STATUS
+-          "A library with LAPACK API not found. Please specify library location."
+-        )
+-      endif()
+-    endif()
+-  endif()
+-endif()
+-
+-# On compilers that implicitly link LAPACK (such as ftn, cc, and CC on Cray HPC machines)
+-# we used a placeholder for empty LAPACK_LIBRARIES to get through our logic above.
+-if(LAPACK_LIBRARIES STREQUAL "LAPACK_LIBRARIES-PLACEHOLDER-FOR-EMPTY-LIBRARIES")
+-  set(LAPACK_LIBRARIES "")
+-endif()
+-
+-cmake_pop_check_state()
+-set(CMAKE_FIND_LIBRARY_SUFFIXES ${_lapack_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
 diff --git a/cmake/Utils.cmake b/cmake/Utils.cmake
-index c7f4582..9b5dfe8 100644
+index c7f4582..62b30d5 100644
 --- a/cmake/Utils.cmake
 +++ b/cmake/Utils.cmake
-@@ -23,7 +23,9 @@ macro(add_kaldi_executable)
+@@ -23,7 +23,7 @@ macro(add_kaldi_executable)
          add_executable(${kaldi_exe_NAME} ${kaldi_exe_SOURCES})
          target_link_libraries(${kaldi_exe_NAME} PRIVATE ${kaldi_exe_DEPENDS})
          # list(APPEND KALDI_EXECUTABLES ${kaldi_exe_NAME})
 -        install(TARGETS ${kaldi_exe_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-+        install(TARGETS ${kaldi_exe_NAME}
-+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-+        COMPONENT conda_kaldi)
++        install(TARGETS ${kaldi_exe_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT kaldi)
  
          unset(kaldi_exe_NAME)
          unset(kaldi_exe_SOURCES)
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index 4181dc4..b96ff3d 100644
+index 4181dc4..6a18d6a 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
-@@ -15,36 +15,47 @@ parser = argparse.ArgumentParser()
- parser.add_argument("working_dir")
- parser.add_argument("--quiet", default=False, action="store_true")
- parser.add_argument("--shared", default=False, action="store_true")
-+parser.add_argument("--conda_root", default=False, action="store_true")
- args = parser.parse_args()
- 
-+
- def print_wrapper(*args_, **kwargs):
-     if not args.quiet:
-         print(*args_, **kwargs)
- 
-+
- def get_subdirectories(d):
-     return [name for name in os.listdir(d) if os.path.isdir(os.path.join(d, name))]
- 
-+
- def is_bin_dir(d):
-     return d.endswith("bin")
- 
-+
- def get_files(d):
-     return [name for name in os.listdir(d) if os.path.isfile(os.path.join(d, name)) and (name not in EXCLUDE_FILES)]
- 
-+
- def is_header(f):
-     return f.endswith(".h")
- 
-+
- def is_cu_source(f):
-     return f.endswith(".cu")
- 
-+
- def is_test_source(f):
-     return f.endswith("-test.cc")
- 
-+
- def is_source(f):
-     return f.endswith(".cc") and not is_test_source(f)
- 
-+
- def lib_dir_name_to_lib_target(dir_name):
-     return "kaldi-" + dir_name
- 
-+
- def bin_dir_name_to_lib_target(dir_name):
-     """return the primary lib target for all executable targets in this bin dir"""
-     assert is_bin_dir(dir_name)
-@@ -56,6 +67,7 @@ def bin_dir_name_to_lib_target(dir_name):
-     else:
-         return "kaldi-" + dir_name[:-3]
- 
-+
- def wrap_notwin32_condition(should_wrap, lines):
-     if isinstance(lines, str):
-         lines = [lines]
-@@ -85,8 +97,8 @@ def get_exe_additional_depends(t):
-         "phones-to-prons": ["fstext"],
- 
-         # solve gmmbin
--        "post-to-feats" : ["hmm"],
--        "append-post-to-feats" : ["hmm"],
-+        "post-to-feats": ["hmm"],
-+        "append-post-to-feats": ["hmm"],
-         "gmm-*": ["hmm", "transform"],
-         "gmm-latgen-*": ["decoder"],
-         "gmm-decode-*": ["decoder"],
-@@ -94,6 +106,21 @@ def get_exe_additional_depends(t):
-         "gmm-align-compiled": ["decoder"],
+@@ -95,6 +95,20 @@ def get_exe_additional_depends(t):
          "gmm-est-fmllr-gpost": ["sgmm2", "hmm"],
          "gmm-rescore-lattice": ["hmm", "lat"],
-+        "gmm-latgen-biglm-faster": ["hmm", "lat", "fstext", "decoder"],
-+
+ 
 +        # solve fgmmbin
 +        "fgmm-global-acc-stats-post": ["gmm", "hmm"],
 +        "fgmm-global-acc-stats": ["gmm"],
@@ -286,153 +1680,47 @@ index 4181dc4..b96ff3d 100644
 +        "fgmm-global-sum-accs": ["gmm"],
 +        "fgmm-global-to-gmm": ["gmm"],
 +        "fgmm-gselect": ["gmm", "hmm"],
- 
++
          # solve fstbin
          "make-grammar-fst": ["decoder"],
-@@ -132,8 +159,9 @@ def get_exe_additional_depends(t):
-     l = []
-     for pattern in additional.keys():
-         if fnmatch.fnmatch(t, pattern):
--            l.extend(list(map(lambda name: lib_dir_name_to_lib_target(name), additional[pattern])))
--    return sorted(list(set(l)))
-+            l.extend(set(map(lambda name: lib_dir_name_to_lib_target(name), additional[pattern])))
-+    return sorted(l)
-+
  
- def disable_for_win32(t):
-     disabled = [
-@@ -145,11 +173,13 @@ def disable_for_win32(t):
-     ]
-     return t in disabled
- 
-+
- class CMakeListsHeaderLibrary(object):
--    def __init__(self, dir_name):
-+    def __init__(self, dir_name, is_shared=False):
-         self.dir_name = dir_name
-         self.target_name = lib_dir_name_to_lib_target(self.dir_name)
-         self.header_list = []
-+        self.is_shared = is_shared
- 
-     def add_header(self, filename):
-         self.header_list.append(filename)
-@@ -174,21 +204,23 @@ class CMakeListsHeaderLibrary(object):
-         ret.append("add_library(" + self.target_name + " INTERFACE)")
-         ret.append("target_include_directories(" + self.target_name + " INTERFACE ")
-         ret.append("    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>")
--        ret.append("    $<INSTALL_INTERFACE:include/kaldi>")
-+        if self.is_shared:
-+            ret.append("    $<INSTALL_INTERFACE:include/kaldi>")
-         ret.append(")\n")
- 
-         ret.append("""
- install(TARGETS {tgt} EXPORT kaldi-targets)
--
--install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
--""".format(tgt=self.target_name, dir=self.dir_name))
-+if(BUILD_SHARED_LIBS)
-+    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
-+endif()""".format(tgt=self.target_name, dir=self.dir_name))
- 
-         return "\n".join(ret)
- 
-+
- class CMakeListsLibrary(object):
- 
--    def __init__(self, dir_name, is_shared):
--        assert(type(is_shared) is bool)
-+    def __init__(self, dir_name, is_shared, has_conda_root=False):
-+        assert (type(is_shared) is bool)
- 
-         self.dir_name = dir_name
-         self.target_name = lib_dir_name_to_lib_target(self.dir_name)
-@@ -198,6 +230,7 @@ class CMakeListsLibrary(object):
-         self.test_source_list = []
-         self.depends = []
-         self.is_shared = is_shared
-+        self.has_conda_root = has_conda_root
- 
-     def add_header(self, filename):
-         self.header_list.append(filename)
-@@ -250,7 +283,10 @@ class CMakeListsLibrary(object):
-         ret.append(")\n")
-         ret.append("target_include_directories(" + self.target_name + " PUBLIC ")
-         ret.append("     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>")
--        ret.append("     $<INSTALL_INTERFACE:include/kaldi>")
-+        if self.has_conda_root:
-+            ret.append("     $<BUILD_INTERFACE:${CONDA_ROOT}/include>")
-+        else:
-+            ret.append("     $<INSTALL_INTERFACE:include/kaldi>")
-         ret.append(")\n")
- 
-         if len(self.depends) > 0:
-@@ -272,28 +308,53 @@ class CMakeListsLibrary(object):
-                 exe_target = get_test_exe_name(f)
-                 depends = (self.target_name + " " + " ".join(get_exe_additional_depends(exe_target))).strip()
-                 ret.extend(wrap_notwin32_condition(disable_for_win32(self.target_name),
--                    "    add_kaldi_test_executable(NAME " + exe_target + " SOURCES " + f + " DEPENDS " + depends + ")"))
-+                                                   "    add_kaldi_test_executable(NAME " + exe_target + " SOURCES " + f + " DEPENDS " + depends + ")"))
+@@ -276,6 +290,27 @@ class CMakeListsLibrary(object):
              ret.append("endif()")
  
          ret.append("""
--install(TARGETS {tgt}
--    EXPORT kaldi-targets
--    ARCHIVE DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
--    LIBRARY DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
--    RUNTIME DESTINATION ${{CMAKE_INSTALL_BINDIR}}
--)
--
--install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
--""".format(tgt=self.target_name, dir=self.dir_name))
-+if(MSVC)
-+    install(TARGETS {tgt}
-+        EXPORT kaldi-targets
-+        RUNTIME 
-+            DESTINATION ${{CMAKE_INSTALL_BINDIR}}
-+            COMPONENT conda_kaldi
-+    )
-+
-+else()
 +if(CONDA_ROOT)
-+    install(TARGETS {tgt}
-+        EXPORT kaldi-targets
-+        LIBRARY 
-+            DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
-+            NAMELINK_SKIP
-+            COMPONENT conda_kaldi
-+        RUNTIME 
-+            DESTINATION ${{CMAKE_INSTALL_BINDIR}}
-+            COMPONENT conda_kaldi
-+    )
-+else()
-+    install(TARGETS {tgt}
-+        EXPORT kaldi-targets
-+        ARCHIVE 
-+            DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
-+        LIBRARY 
-+            DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
-+        RUNTIME 
-+            DESTINATION ${{CMAKE_INSTALL_BINDIR}}
-+    )
++    if(MSVC)
++        install(TARGETS {tgt}
++            EXPORT kaldi-targets
++            RUNTIME 
++                DESTINATION ${{CMAKE_INSTALL_BINDIR}}
++                COMPONENT kaldi
++        )
 +
-+    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
++    else()
++        install(TARGETS {tgt}
++            EXPORT kaldi-targets
++            LIBRARY 
++                DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
++                COMPONENT kaldi
++            RUNTIME 
++                DESTINATION ${{CMAKE_INSTALL_BINDIR}}
++                COMPONENT kaldi
++        )
++    endif()
++else() # Original functionality
+ install(TARGETS {tgt}
+     EXPORT kaldi-targets
+     ARCHIVE DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
+@@ -283,6 +318,7 @@ install(TARGETS {tgt}
+     RUNTIME DESTINATION ${{CMAKE_INSTALL_BINDIR}}
+ )
+ 
 +endif()
-+
-+endif()""".format(tgt=self.target_name, dir=self.dir_name))
+ install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
+ """.format(tgt=self.target_name, dir=self.dir_name))
  
-         return "\n".join(ret)
- 
- 
--
- class CMakeListsExecutable(object):
- 
-     def __init__(self, dir_name, filename):
--        assert(dir_name.endswith("bin"))
-+        assert (dir_name.endswith("bin"))
-         self.list = []
-         exe_name = os.path.splitext(os.path.basename(filename))[0]
-         file_name = filename
-@@ -303,14 +364,17 @@ class CMakeListsExecutable(object):
+@@ -303,7 +339,10 @@ class CMakeListsExecutable(object):
      def gen_code(self):
          ret = []
          for exe_name, file_name, depend in self.list:
@@ -442,34 +1730,27 @@ index 4181dc4..b96ff3d 100644
 +            else:
 +                depends = (depend + " " + " ".join(get_exe_additional_depends(exe_name))).strip()
              ret.extend(wrap_notwin32_condition(disable_for_win32(exe_name),
--                       "add_kaldi_executable(NAME " + exe_name + " SOURCES " + file_name + " DEPENDS " + depends + ")"))
-+                                               "add_kaldi_executable(NAME " + exe_name + " SOURCES " + file_name + " DEPENDS " + depends + ")"))
+                        "add_kaldi_executable(NAME " + exe_name + " SOURCES " + file_name + " DEPENDS " + depends + ")"))
  
-         return "\n".join(ret)
- 
--class CMakeListsFile(object):
- 
-+class CMakeListsFile(object):
-     GEN_CMAKE_HEADER = "# generated with cmake/gen_cmake_skeleton.py, DO NOT MODIFY.\n"
- 
-     def __init__(self, directory):
 diff --git a/cmake/third_party/openfst.cmake b/cmake/third_party/openfst.cmake
-index edb4314..81af029 100644
+index edb4314..41256d2 100644
 --- a/cmake/third_party/openfst.cmake
 +++ b/cmake/third_party/openfst.cmake
-@@ -9,17 +9,73 @@ FetchContent_Declare(
- 
- FetchContent_GetProperties(openfst)
- if(NOT openfst_POPULATED)
-+    message(STATUS "Openfst? CONDA_ROOT ${CONDA_ROOT}")
-     FetchContent_Populate(openfst)
-     include_directories(${openfst_SOURCE_DIR}/src/include)
+@@ -14,12 +14,74 @@ if(NOT openfst_POPULATED)
  
      add_subdirectory(${openfst_SOURCE_DIR} ${openfst_BINARY_DIR})
-+    if(CONDA_ROOT)
  
 -    install(DIRECTORY ${openfst_SOURCE_DIR}/src/include/ DESTINATION include/
 -            FILES_MATCHING PATTERN "*.h")
+-
+-    install(TARGETS fst
+-            EXPORT kaldi-targets
+-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
++
++    if(CONDA_ROOT)
++
 +        if(MSVC)
 +            install(TARGETS fstarcsort fstclosure fstcompile fstcompose fstconcat fstconnect fstconvert fstdeterminize
 +                            fstdifference fstdisambiguate fstdraw fstencode fstepsnormalize fstequal fstequivalent
@@ -478,65 +1759,65 @@ index edb4314..81af029 100644
 +                            fstshortestpath fstsymbols fstsynchronize fsttopsort fstunion
 +            RUNTIME
 +                DESTINATION ${CMAKE_INSTALL_BINDIR}
-+                COMPONENT conda_kaldi
++                COMPONENT kaldi
 +            )
 +            install(TARGETS farcompilestrings farcreate farequal farextract farinfo farisomorphic farprintstrings
 +            RUNTIME
 +                DESTINATION ${CMAKE_INSTALL_BINDIR}
-+                COMPONENT conda_kaldi
++                COMPONENT kaldi
 +            )
 +            install(TARGETS fstlinear fstloglinearapply
 +            RUNTIME
 +                DESTINATION ${CMAKE_INSTALL_BINDIR}
-+                COMPONENT conda_kaldi
++                COMPONENT kaldi
 +            )
 +            install(TARGETS mpdtcompose mpdtexpand mpdtinfo mpdtreverse
 +            RUNTIME
 +                DESTINATION ${CMAKE_INSTALL_BINDIR}
-+                COMPONENT conda_kaldi
++                COMPONENT kaldi
 +            )
 +            install(TARGETS pdtcompose pdtexpand pdtinfo pdtreplace pdtreverse pdtshortestpath
 +            RUNTIME
 +                DESTINATION ${CMAKE_INSTALL_BINDIR}
-+                COMPONENT conda_kaldi
++                COMPONENT kaldi
 +            )
 +            install(TARGETS fstspecial
 +            RUNTIME
 +                DESTINATION ${CMAKE_INSTALL_BINDIR}
-+                COMPONENT conda_kaldi
++                COMPONENT kaldi
 +            )
++
++            install(DIRECTORY ${openfst_SOURCE_DIR}/src/include/ DESTINATION include/
++                    FILES_MATCHING PATTERN "*.h")
++        
++            install(TARGETS fst
++                    EXPORT kaldi-targets
++                    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT kaldi
++                    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT kaldi NAMELINK_SKIP
++                    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT kaldi)
 +        else()
 +
 +            install(TARGETS fst
 +                    LIBRARY
 +                        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-+                        COMPONENT conda_kaldi
-+                        NAMELINK_SKIP
++                        COMPONENT kaldi
++                        NAMELINK_SKIP # Link to so with version to avoid conflicts with OpenFst 1.8.1 on conda
 +                    )
 +
 +        endif()
-+    else()
++
++    else() # Original functionality
++
 +        install(DIRECTORY ${openfst_SOURCE_DIR}/src/include/ DESTINATION include/
 +                FILES_MATCHING PATTERN "*.h")
-+    endif()
-+
 +
 +        install(TARGETS fst
 +                EXPORT kaldi-targets
-+                LIBRARY
-+                    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-+                    COMPONENT conda_kaldi
-+                    NAMELINK_SKIP
-+                RUNTIME
-+                    DESTINATION ${CMAKE_INSTALL_BINDIR}
-+                    COMPONENT conda_kaldi
-+                )
- 
--    install(TARGETS fst
--            EXPORT kaldi-targets
--            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
--            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
--            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
++                ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++                LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++                RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
++
++    endif() 
  endif()
 -- 
 2.33.1
