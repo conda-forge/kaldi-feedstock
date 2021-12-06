@@ -16,6 +16,7 @@ build:
   number: 0
   run_exports:
     - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
+  skip: true  # [not linux]
 
 requirements:
   build:
@@ -24,67 +25,35 @@ requirements:
     - {{ compiler('cuda') }}  # [cuda_compiler_version != "None"]
     - cmake
     - ninja
+    - m2-patch  # [win]
+    - libtool  # [not win]
+    - automake  # [not win]
+  host:
+    - pthreads-win32        # [win]
+    - mkl-devel             # [x86]
+    - mkl        # [x86]
+    - libblas * *mkl       # [x86]
+    - libcblas * *mkl       # [x86]
+    - liblapack * *mkl       # [x86]
+    - libblas               # [not x86]
+    - libcblas              # [not x86]
+    - liblapack             # [not x86]
+    - openblas              # [not x86]
+    - blas-devel            # [not x86]
+    - zlib
+    - icu
+  run:
+    - mkl         # [x86]
+    - libblas * *mkl       # [x86]
+    - libcblas * *mkl       # [x86]
+    - liblapack * *mkl       # [x86]
+    - libblas               # [not x86]
+    - libcblas              # [not x86]
+    - liblapack             # [not x86]
 
-outputs:
-  - name: kaldi
-    build:
-      string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
-      string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [cuda_compiler_version == "None"]
-      detect_binary_files_with_prefix: false
-
-    requirements:
-      build:
-        - {{ compiler('cxx') }}
-        - {{ compiler('fortran') }}  # [not win]
-        - {{ compiler('cuda') }}  # [cuda_compiler_version != "None"]
-        - cmake
-        - ninja
-        - m2-patch  # [win]
-        - libtool  # [not win]
-        - automake  # [not win]
-      host:
-        - pthreads-win32        # [win]
-        - mkl-devel             # [x86]
-        - mkl        # [x86]
-        - libblas * *mkl       # [x86]
-        - libcblas * *mkl       # [x86]
-        - liblapack * *mkl       # [x86]
-        - libblas               # [not x86]
-        - libcblas              # [not x86]
-        - liblapack             # [not x86]
-        - openblas              # [not x86]
-        - blas-devel            # [not x86]
-        - zlib
-        - icu
-      run:
-        - mkl         # [x86]
-        - libblas * *mkl       # [x86]
-        - libcblas * *mkl       # [x86]
-        - liblapack * *mkl       # [x86]
-        - libblas               # [not x86]
-        - libcblas              # [not x86]
-        - liblapack             # [not x86]
-
-    test:
-      requires:
-        - openfst  # [not win]
-
-  {% set kaldi_cpu_gpu = "kaldi-cpu" %}   # [cuda_compiler_version == "None"]
-  {% set kaldi_cpu_gpu = "kaldi-gpu" %}   # [cuda_compiler_version != "None"]
-  - name: {{ kaldi_cpu_gpu }}
-    build:
-      string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
-      string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [cuda_compiler_version == "None"]
-      detect_binary_files_with_prefix: False
-      # weigh down cpu implementation and give cuda preference
-      track_features:
-        - kaldi                                     # [cuda_compiler_version == "None"]
-    requirements:
-      run:
-        - {{ pin_subpackage("kaldi", exact=True) }}
-    test:
-      requires:
-        - openfst  # [not win]
+test:
+  requires:
+    - openfst  # [not win]
 
 about:
   home: http://kaldi-asr.org/

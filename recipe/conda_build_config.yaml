@@ -1,3 +1,5 @@
+cuda_compiler_version:
+  - None  # [not linux]
 blas_impl:
   - mkl              # [x86 or x86_64]
 c_compiler:                     # [win]
