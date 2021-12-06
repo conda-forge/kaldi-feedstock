@@ -17,6 +17,13 @@ build:
   run_exports:
     - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
 
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - {{ compiler('fortran') }}  # [not win]
+    - cmake
+    - ninja
+
 outputs:
   - name: kaldi
     build:
@@ -30,9 +37,8 @@ outputs:
         - {{ compiler('fortran') }}  # [not win]
         - {{ compiler('cuda') }}  # [cuda_compiler_version != "None"]
         - cmake
-        - make  # [not win]
-        - m2-patch  # [win]
         - ninja
+        - m2-patch  # [win]
         - libtool  # [not win]
         - automake  # [not win]
       host:
