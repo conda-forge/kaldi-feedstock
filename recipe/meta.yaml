@@ -21,6 +21,7 @@ requirements:
   build:
     - {{ compiler('cxx') }}
     - {{ compiler('fortran') }}  # [not win]
+    - {{ compiler('cuda') }}  # [cuda_compiler_version != "None"]
     - cmake
     - ninja
 
