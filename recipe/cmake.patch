@@ -1,4 +1,4 @@
-From 2a059536abc1a2ab9818c4be0cdd6860dd19c0ea Mon Sep 17 00:00:00 2001
+From 93086159231b3fa583e45a67b763b9166b8d833e Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
@@ -15,7 +15,7 @@ Subject: [PATCH] Update CMake build
  delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..dfaf8b1 100644
+index 8b2de3a..d02981f 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -137,8 +137,8 @@ index 8b2de3a..dfaf8b1 100644
  
 -find_package(CUDA)
 +if (CONDA_ROOT)
-+    find_package(CUDAToolkit REQUIRED)
-+    find_package(CUDA REQUIRED)
++    find_package(CUDAToolkit)
++    find_package(CUDA)
 +else()
 +    find_package(CUDA)
 +endif()
