@@ -1,21 +1,21 @@
-From 66938b12b3fd517a1fdd8f3051db4c6aef4d217e Mon Sep 17 00:00:00 2001
+From bd2faee59d46786ba35058b472c4a5a9d2dafe82 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
 
 ---
- CMakeLists.txt                  | 155 +++---
+ CMakeLists.txt                  | 166 +++---
  cmake/FindBLAS.cmake            | 902 --------------------------------
  cmake/FindLAPACK.cmake          | 496 ------------------
  cmake/Utils.cmake               |   2 +-
  cmake/gen_cmake_skeleton.py     |  41 +-
  cmake/third_party/openfst.cmake |  78 ++-
- 6 files changed, 206 insertions(+), 1468 deletions(-)
+ 6 files changed, 215 insertions(+), 1470 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..d179a00 100644
+index 8b2de3a..dfaf8b1 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -24,7 +24,7 @@ index 8b2de3a..d179a00 100644
  project(kaldi)
  
  if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-@@ -8,6 +8,15 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+@@ -8,6 +8,18 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
  include(GNUInstallDirs)
  include(Utils)
  
@@ -34,13 +34,16 @@ index 8b2de3a..d179a00 100644
 +    set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib")
 +    link_directories("${CONDA_ROOT}/lib")
 +    include_directories("${CONDA_ROOT}/include")
++    if (NOT CUDA_TOOLKIT_ROOT_DIR)
++        set(CUDA_TOOLKIT_ROOT_DIR "${CONDA_ROOT}")
++    endif()
 +
 +endif()
 +
  include(third_party/get_third_party)
  
  include(cmake/third_party/openfst.cmake)
-@@ -66,45 +75,53 @@ link_libraries(${CMAKE_DL_LIBS})
+@@ -66,45 +78,53 @@ link_libraries(${CMAKE_DL_LIBS})
  find_package(Threads)
  link_libraries(Threads::Threads)
  
@@ -128,7 +131,7 @@ index 8b2de3a..d179a00 100644
  endif()
  
  if(MSVC)
-@@ -125,7 +142,12 @@ if(MSVC)
+@@ -125,7 +145,12 @@ if(MSVC)
      endif()
  endif()
  
@@ -142,7 +145,21 @@ index 8b2de3a..d179a00 100644
  if(CUDA_FOUND)
      set(CUDA_PROPAGATE_HOST_FLAGS ON)
      set(KALDI_CUDA_NVCC_FLAGS "--default-stream=per-thread;-std=c++${CMAKE_CXX_STANDARD}")
-@@ -166,10 +188,16 @@ endif()
+@@ -158,18 +183,28 @@ if(CUDA_FOUND)
+     include_directories(${NvToolExt_INCLUDE_DIR})
+     link_libraries(${NvToolExt_LIBRARIES})
+ 
+-    get_third_party(cub)
+-    set(CUB_ROOT_DIR "${CMAKE_CURRENT_BINARY_DIR}/cub")
++    if (CONDA_ROOT)
++        set(CUB_ROOT_DIR "${CONDA_ROOT}")
++    else()
++        get_third_party(cub)
++        set(CUB_ROOT_DIR "${CMAKE_CURRENT_BINARY_DIR}/cub")
++    endif()
+     find_package(CUB REQUIRED)
+     include_directories(${CUB_INCLUDE_DIR})
+ endif()
  
  add_definitions(-DKALDI_NO_PORTAUDIO=1)
  
@@ -163,7 +180,7 @@ index 8b2de3a..d179a00 100644
  endif()
  
  # get_third_party(openfst)
-@@ -208,8 +236,10 @@ add_subdirectory(src/nnet3)
+@@ -208,8 +243,10 @@ add_subdirectory(src/nnet3)
  add_subdirectory(src/rnnlm)
  add_subdirectory(src/chain)
  add_subdirectory(src/ivector)
@@ -176,7 +193,7 @@ index 8b2de3a..d179a00 100644
  add_subdirectory(src/kws)
  
  add_subdirectory(src/itf)
-@@ -228,6 +258,7 @@ endif()
+@@ -228,6 +265,7 @@ endif()
  # add all native executables
  add_subdirectory(src/bin)
  add_subdirectory(src/gmmbin)
@@ -184,7 +201,7 @@ index 8b2de3a..d179a00 100644
  add_subdirectory(src/featbin)
  add_subdirectory(src/sgmm2bin)
  add_subdirectory(src/fstbin)
-@@ -239,8 +270,10 @@ add_subdirectory(src/nnet3bin)
+@@ -239,8 +277,10 @@ add_subdirectory(src/nnet3bin)
  add_subdirectory(src/rnnlmbin)
  add_subdirectory(src/chainbin)
  add_subdirectory(src/ivectorbin)
@@ -197,7 +214,7 @@ index 8b2de3a..d179a00 100644
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables
-@@ -249,19 +282,21 @@ if(CUDA_FOUND)
+@@ -249,19 +289,21 @@ if(CUDA_FOUND)
      add_subdirectory(src/cudadecoderbin)
  endif()
  
