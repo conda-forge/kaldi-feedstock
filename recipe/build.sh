@@ -4,6 +4,7 @@ mkdir build
 
 pushd build
 
+echo "${CMAKE_ARGS}"
 
 cmake -GNinja ${CMAKE_ARGS} -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON -DCMAKE_BUILD_TYPE=Release \
               -DCONDA_ROOT="${PREFIX}" \
