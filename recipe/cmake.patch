@@ -1,21 +1,21 @@
-From 01d0672e36c53defda79a4cf78fd8d5fff686dcb Mon Sep 17 00:00:00 2001
+From b8cf00f27117f90d65b8c43748d97dae53cbf54a Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
 
 ---
- CMakeLists.txt                  | 172 +++---
+ CMakeLists.txt                  | 165 +++---
  cmake/FindBLAS.cmake            | 902 --------------------------------
  cmake/FindLAPACK.cmake          | 496 ------------------
  cmake/Utils.cmake               |   2 +-
- cmake/gen_cmake_skeleton.py     |  41 +-
+ cmake/gen_cmake_skeleton.py     |  50 +-
  cmake/third_party/openfst.cmake |  78 ++-
- 6 files changed, 220 insertions(+), 1471 deletions(-)
+ 6 files changed, 220 insertions(+), 1473 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..591ccdc 100644
+index 8b2de3a..c488141 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -24,23 +24,16 @@ index 8b2de3a..591ccdc 100644
  project(kaldi)
  
  if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-@@ -8,6 +8,23 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+@@ -8,6 +8,16 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
  include(GNUInstallDirs)
  include(Utils)
  
 +if(CONDA_ROOT)
 +    message(STATUS "Adding ${CONDA_ROOT} directories")
 +    set(CMAKE_INCLUDE_PATH "${CONDA_ROOT}/include")
-+    if (MSVC)
-+        set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/bin;${CONDA_ROOT}/lib")
-+        link_directories("${CONDA_ROOT}/bin")
-+        link_directories("${CONDA_ROOT}/lib")
++    set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib")
++    link_directories("${CONDA_ROOT}/lib")
 +
-+    else()
-+        set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib")
-+        link_directories("${CONDA_ROOT}/lib")
-+
-+    endif()
 +    include_directories("${CONDA_ROOT}/include")
 +
 +endif()
@@ -48,7 +41,7 @@ index 8b2de3a..591ccdc 100644
  include(third_party/get_third_party)
  
  include(cmake/third_party/openfst.cmake)
-@@ -66,45 +83,52 @@ link_libraries(${CMAKE_DL_LIBS})
+@@ -66,45 +76,52 @@ link_libraries(${CMAKE_DL_LIBS})
  find_package(Threads)
  link_libraries(Threads::Threads)
  
@@ -136,13 +129,13 @@ index 8b2de3a..591ccdc 100644
  endif()
  
  if(MSVC)
-@@ -125,7 +149,12 @@ if(MSVC)
+@@ -125,7 +142,12 @@ if(MSVC)
      endif()
  endif()
  
 -find_package(CUDA)
 +if (CONDA_ROOT)
-+    find_package(CUDAToolkit)
++    # find_package(CUDAToolkit) # Necessary for conda compilation, but there are some issues currently with CUDA on their azure pipelines
 +    find_package(CUDA)
 +else()
 +    find_package(CUDA)
@@ -150,7 +143,7 @@ index 8b2de3a..591ccdc 100644
  if(CUDA_FOUND)
      set(CUDA_PROPAGATE_HOST_FLAGS ON)
      set(KALDI_CUDA_NVCC_FLAGS "--default-stream=per-thread;-std=c++${CMAKE_CXX_STANDARD}")
-@@ -158,18 +187,28 @@ if(CUDA_FOUND)
+@@ -158,18 +180,28 @@ if(CUDA_FOUND)
      include_directories(${NvToolExt_INCLUDE_DIR})
      link_libraries(${NvToolExt_LIBRARIES})
  
@@ -185,7 +178,7 @@ index 8b2de3a..591ccdc 100644
  endif()
  
  # get_third_party(openfst)
-@@ -208,8 +247,10 @@ add_subdirectory(src/nnet3)
+@@ -208,8 +240,10 @@ add_subdirectory(src/nnet3)
  add_subdirectory(src/rnnlm)
  add_subdirectory(src/chain)
  add_subdirectory(src/ivector)
@@ -198,7 +191,7 @@ index 8b2de3a..591ccdc 100644
  add_subdirectory(src/kws)
  
  add_subdirectory(src/itf)
-@@ -228,6 +269,7 @@ endif()
+@@ -228,6 +262,7 @@ endif()
  # add all native executables
  add_subdirectory(src/bin)
  add_subdirectory(src/gmmbin)
@@ -206,7 +199,7 @@ index 8b2de3a..591ccdc 100644
  add_subdirectory(src/featbin)
  add_subdirectory(src/sgmm2bin)
  add_subdirectory(src/fstbin)
-@@ -239,8 +281,10 @@ add_subdirectory(src/nnet3bin)
+@@ -239,8 +274,10 @@ add_subdirectory(src/nnet3bin)
  add_subdirectory(src/rnnlmbin)
  add_subdirectory(src/chainbin)
  add_subdirectory(src/ivectorbin)
@@ -219,7 +212,7 @@ index 8b2de3a..591ccdc 100644
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables
-@@ -249,19 +293,21 @@ if(CUDA_FOUND)
+@@ -249,19 +286,21 @@ if(CUDA_FOUND)
      add_subdirectory(src/cudadecoderbin)
  endif()
  
@@ -1681,7 +1674,7 @@ index c7f4582..62b30d5 100644
          unset(kaldi_exe_NAME)
          unset(kaldi_exe_SOURCES)
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index 4181dc4..6a18d6a 100644
+index 4181dc4..f79f943 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
 @@ -95,6 +95,20 @@ def get_exe_additional_depends(t):
@@ -1705,7 +1698,21 @@ index 4181dc4..6a18d6a 100644
          # solve fstbin
          "make-grammar-fst": ["decoder"],
  
-@@ -276,6 +290,27 @@ class CMakeListsLibrary(object):
+@@ -180,7 +194,12 @@ class CMakeListsHeaderLibrary(object):
+         ret.append("""
+ install(TARGETS {tgt} EXPORT kaldi-targets)
+ 
+-install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
++if (CONDA_ROOT)
++    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir} COMPONENT kaldi)
++
++else()
++    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
++endif()
+ """.format(tgt=self.target_name, dir=self.dir_name))
+ 
+         return "\n".join(ret)
+@@ -276,6 +295,28 @@ class CMakeListsLibrary(object):
              ret.append("endif()")
  
          ret.append("""
@@ -1729,19 +1736,21 @@ index 4181dc4..6a18d6a 100644
 +                COMPONENT kaldi
 +        )
 +    endif()
++    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir} COMPONENT kaldi)
 +else() # Original functionality
  install(TARGETS {tgt}
      EXPORT kaldi-targets
      ARCHIVE DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
-@@ -283,6 +318,7 @@ install(TARGETS {tgt}
+@@ -283,7 +324,7 @@ install(TARGETS {tgt}
      RUNTIME DESTINATION ${{CMAKE_INSTALL_BINDIR}}
  )
  
+-install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
 +endif()
- install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
  """.format(tgt=self.target_name, dir=self.dir_name))
  
-@@ -303,7 +339,10 @@ class CMakeListsExecutable(object):
+         return "\n".join(ret)
+@@ -303,7 +344,10 @@ class CMakeListsExecutable(object):
      def gen_code(self):
          ret = []
          for exe_name, file_name, depend in self.list:
@@ -1754,7 +1763,7 @@ index 4181dc4..6a18d6a 100644
                         "add_kaldi_executable(NAME " + exe_name + " SOURCES " + file_name + " DEPENDS " + depends + ")"))
  
 diff --git a/cmake/third_party/openfst.cmake b/cmake/third_party/openfst.cmake
-index edb4314..41256d2 100644
+index edb4314..20cc16e 100644
 --- a/cmake/third_party/openfst.cmake
 +++ b/cmake/third_party/openfst.cmake
 @@ -14,12 +14,74 @@ if(NOT openfst_POPULATED)
@@ -1809,7 +1818,7 @@ index edb4314..41256d2 100644
 +            )
 +
 +            install(DIRECTORY ${openfst_SOURCE_DIR}/src/include/ DESTINATION include/
-+                    FILES_MATCHING PATTERN "*.h")
++                    FILES_MATCHING PATTERN "*.h" COMPONENT kaldi)
 +        
 +            install(TARGETS fst
 +                    EXPORT kaldi-targets
