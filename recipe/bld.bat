@@ -11,4 +11,4 @@ cmake -GNinja  -DOVERRIDE_KALDI_VERSION="%PKG_VERSION%" -DCMAKE_BUILD_TYPE=Relea
 
 cmake --build . --verbose --config Release -- -v -j %CPU_COUNT%
 
-cmake --install . --component conda_kaldi --verbose --config Release
+cmake --install . --component kaldi --verbose --config Release

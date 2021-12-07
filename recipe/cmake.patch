@@ -1,21 +1,21 @@
-From 93086159231b3fa583e45a67b763b9166b8d833e Mon Sep 17 00:00:00 2001
+From 01d0672e36c53defda79a4cf78fd8d5fff686dcb Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
 
 ---
- CMakeLists.txt                  | 166 +++---
+ CMakeLists.txt                  | 172 +++---
  cmake/FindBLAS.cmake            | 902 --------------------------------
  cmake/FindLAPACK.cmake          | 496 ------------------
  cmake/Utils.cmake               |   2 +-
  cmake/gen_cmake_skeleton.py     |  41 +-
  cmake/third_party/openfst.cmake |  78 ++-
- 6 files changed, 215 insertions(+), 1470 deletions(-)
+ 6 files changed, 220 insertions(+), 1471 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..d02981f 100644
+index 8b2de3a..591ccdc 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -24,44 +24,77 @@ index 8b2de3a..d02981f 100644
  project(kaldi)
  
  if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-@@ -8,6 +8,18 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+@@ -8,6 +8,23 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
  include(GNUInstallDirs)
  include(Utils)
  
 +if(CONDA_ROOT)
 +    message(STATUS "Adding ${CONDA_ROOT} directories")
 +    set(CMAKE_INCLUDE_PATH "${CONDA_ROOT}/include")
-+    set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib")
-+    link_directories("${CONDA_ROOT}/lib")
-+    include_directories("${CONDA_ROOT}/include")
-+    if (NOT CUDA_TOOLKIT_ROOT_DIR)
-+        set(CUDA_TOOLKIT_ROOT_DIR "${CONDA_ROOT}")
++    if (MSVC)
++        set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/bin;${CONDA_ROOT}/lib")
++        link_directories("${CONDA_ROOT}/bin")
++        link_directories("${CONDA_ROOT}/lib")
++
++    else()
++        set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib")
++        link_directories("${CONDA_ROOT}/lib")
++
 +    endif()
++    include_directories("${CONDA_ROOT}/include")
 +
 +endif()
 +
  include(third_party/get_third_party)
  
  include(cmake/third_party/openfst.cmake)
-@@ -66,45 +78,53 @@ link_libraries(${CMAKE_DL_LIBS})
+@@ -66,45 +83,52 @@ link_libraries(${CMAKE_DL_LIBS})
  find_package(Threads)
  link_libraries(Threads::Threads)
  
 -if(MATHLIB STREQUAL "OpenBLAS")
 -    set(BLA_VENDOR "OpenBLAS")
-+if(CONDA_ROOT)
-+    set(BLA_VENDOR "Generic")
-+    find_package(BLAS REQUIRED)
-     find_package(LAPACK REQUIRED)
-     add_definitions(-DHAVE_CLAPACK=1)
-     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
+-    find_package(LAPACK REQUIRED)
+-    add_definitions(-DHAVE_CLAPACK=1)
+-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
 -    link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
 -elseif(MATHLIB STREQUAL "MKL")
 -    if(NOT DEFINED ENV{MKLROOT} OR "$ENV{MKLROOT}" STREQUAL "")
 -        message(FATAL_ERROR "Environment variable MKLROOT is not defined")
+-    else()
+-        message(STATUS "Finding MKL from \"$ENV{MKLROOT}\"")
+-    endif()
+-    normalize_env_path(ENV{MKLROOT})
++if(CONDA_ROOT)
+     set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
+-    find_package(LAPACK REQUIRED)
+-    add_definitions(-DHAVE_MKL=1)
+-    include_directories($ENV{MKLROOT}/include)
+-    link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+-elseif(MATHLIB STREQUAL "Accelerate")
+-    execute_process(COMMAND sw_vers -productVersion
+-        OUTPUT_VARIABLE MACOS_VERSION)
+-    if(MACOS_VERSION VERSION_LESS "10.12" AND MACOS_VERSION VERSION_GREATER_EQUAL "10.11")
+-        message(WARNING
+-            "**BAD WARNING**: You are using OS X El Capitan.  Some versions of this OS"
+-            " have a bug in the BLAS implementation that affects Kaldi."
+-            " After compiling, cd to matrix/ and type 'make test'.  The"
+-            " test will fail if the problem exists in your version."
+-            " Eventually this issue will be fixed by system updates from"
+-            " Apple.  Unexplained crashes with reports of NaNs will"
+-            " be caused by this bug, but some recipes will (sometimes) work."
+-        )
+-    endif()
+-    set(BLA_VENDOR "Apple")
+     find_package(BLAS REQUIRED)
+     find_package(LAPACK REQUIRED)
+-    add_definitions(-DHAVE_CLAPACK=1)
+-    link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
++    add_definitions(-DHAVE_MKL=1)
 +    link_libraries(BLAS::BLAS)
 +    link_libraries(LAPACK::LAPACK)
-+else()
+ else()
+-    message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
 +    if(MATHLIB STREQUAL "OpenBLAS")
 +        add_definitions(-DHAVE_CLAPACK=1)
 +        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
@@ -97,41 +130,13 @@ index 8b2de3a..d02981f 100644
 +        find_package(LAPACK REQUIRED)
 +        add_definitions(-DHAVE_CLAPACK=1)
 +        link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
-     else()
--        message(STATUS "Finding MKL from \"$ENV{MKLROOT}\"")
--    endif()
--    normalize_env_path(ENV{MKLROOT})
--    set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
--    find_package(LAPACK REQUIRED)
--    add_definitions(-DHAVE_MKL=1)
--    include_directories($ENV{MKLROOT}/include)
--    link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
--elseif(MATHLIB STREQUAL "Accelerate")
--    execute_process(COMMAND sw_vers -productVersion
--        OUTPUT_VARIABLE MACOS_VERSION)
--    if(MACOS_VERSION VERSION_LESS "10.12" AND MACOS_VERSION VERSION_GREATER_EQUAL "10.11")
--        message(WARNING
--            "**BAD WARNING**: You are using OS X El Capitan.  Some versions of this OS"
--            " have a bug in the BLAS implementation that affects Kaldi."
--            " After compiling, cd to matrix/ and type 'make test'.  The"
--            " test will fail if the problem exists in your version."
--            " Eventually this issue will be fixed by system updates from"
--            " Apple.  Unexplained crashes with reports of NaNs will"
--            " be caused by this bug, but some recipes will (sometimes) work."
--        )
++    else()
 +        message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
-     endif()
--    set(BLA_VENDOR "Apple")
--    find_package(BLAS REQUIRED)
--    find_package(LAPACK REQUIRED)
--    add_definitions(-DHAVE_CLAPACK=1)
--    link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
--else()
--    message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
++    endif()
  endif()
  
  if(MSVC)
-@@ -125,7 +145,12 @@ if(MSVC)
+@@ -125,7 +149,12 @@ if(MSVC)
      endif()
  endif()
  
@@ -145,7 +150,7 @@ index 8b2de3a..d02981f 100644
  if(CUDA_FOUND)
      set(CUDA_PROPAGATE_HOST_FLAGS ON)
      set(KALDI_CUDA_NVCC_FLAGS "--default-stream=per-thread;-std=c++${CMAKE_CXX_STANDARD}")
-@@ -158,18 +183,28 @@ if(CUDA_FOUND)
+@@ -158,18 +187,28 @@ if(CUDA_FOUND)
      include_directories(${NvToolExt_INCLUDE_DIR})
      link_libraries(${NvToolExt_LIBRARIES})
  
@@ -180,7 +185,7 @@ index 8b2de3a..d02981f 100644
  endif()
  
  # get_third_party(openfst)
-@@ -208,8 +243,10 @@ add_subdirectory(src/nnet3)
+@@ -208,8 +247,10 @@ add_subdirectory(src/nnet3)
  add_subdirectory(src/rnnlm)
  add_subdirectory(src/chain)
  add_subdirectory(src/ivector)
@@ -193,7 +198,7 @@ index 8b2de3a..d02981f 100644
  add_subdirectory(src/kws)
  
  add_subdirectory(src/itf)
-@@ -228,6 +265,7 @@ endif()
+@@ -228,6 +269,7 @@ endif()
  # add all native executables
  add_subdirectory(src/bin)
  add_subdirectory(src/gmmbin)
@@ -201,7 +206,7 @@ index 8b2de3a..d02981f 100644
  add_subdirectory(src/featbin)
  add_subdirectory(src/sgmm2bin)
  add_subdirectory(src/fstbin)
-@@ -239,8 +277,10 @@ add_subdirectory(src/nnet3bin)
+@@ -239,8 +281,10 @@ add_subdirectory(src/nnet3bin)
  add_subdirectory(src/rnnlmbin)
  add_subdirectory(src/chainbin)
  add_subdirectory(src/ivectorbin)
@@ -214,7 +219,7 @@ index 8b2de3a..d02981f 100644
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables
-@@ -249,19 +289,21 @@ if(CUDA_FOUND)
+@@ -249,19 +293,21 @@ if(CUDA_FOUND)
      add_subdirectory(src/cudadecoderbin)
  endif()
  
