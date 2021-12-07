@@ -1,4 +1,4 @@
-From b8cf00f27117f90d65b8c43748d97dae53cbf54a Mon Sep 17 00:00:00 2001
+From 9d3b8539a001766259675f42d903408471d53492 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
@@ -9,8 +9,8 @@ Subject: [PATCH] Update CMake build
  cmake/FindLAPACK.cmake          | 496 ------------------
  cmake/Utils.cmake               |   2 +-
  cmake/gen_cmake_skeleton.py     |  50 +-
- cmake/third_party/openfst.cmake |  78 ++-
- 6 files changed, 220 insertions(+), 1473 deletions(-)
+ cmake/third_party/openfst.cmake |  79 ++-
+ 6 files changed, 221 insertions(+), 1473 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
@@ -1763,10 +1763,10 @@ index 4181dc4..f79f943 100644
                         "add_kaldi_executable(NAME " + exe_name + " SOURCES " + file_name + " DEPENDS " + depends + ")"))
  
 diff --git a/cmake/third_party/openfst.cmake b/cmake/third_party/openfst.cmake
-index edb4314..20cc16e 100644
+index edb4314..a6fbad3 100644
 --- a/cmake/third_party/openfst.cmake
 +++ b/cmake/third_party/openfst.cmake
-@@ -14,12 +14,74 @@ if(NOT openfst_POPULATED)
+@@ -14,12 +14,75 @@ if(NOT openfst_POPULATED)
  
      add_subdirectory(${openfst_SOURCE_DIR} ${openfst_BINARY_DIR})
  
@@ -1818,7 +1818,8 @@ index edb4314..20cc16e 100644
 +            )
 +
 +            install(DIRECTORY ${openfst_SOURCE_DIR}/src/include/ DESTINATION include/
-+                    FILES_MATCHING PATTERN "*.h" COMPONENT kaldi)
++                    COMPONENT kaldi
++                    FILES_MATCHING PATTERN "*.h")
 +        
 +            install(TARGETS fst
 +                    EXPORT kaldi-targets
