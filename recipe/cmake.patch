@@ -1,4 +1,4 @@
-From bd2faee59d46786ba35058b472c4a5a9d2dafe82 Mon Sep 17 00:00:00 2001
+From 2a059536abc1a2ab9818c4be0cdd6860dd19c0ea Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build

@@ -1,7 +1,7 @@
-cuda_compiler_version:
-  - None  # [not linux]
-blas_impl:
-  - mkl              # [x86 or x86_64]
+c_compiler_version:
+  - 7                          # [linux64]
+cxx_compiler_version:
+  - 7                          # [linux64]
 c_compiler:                     # [win]
   - vs2019                       # [win]
 cxx_compiler:                    # [win]

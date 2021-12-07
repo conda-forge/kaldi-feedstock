@@ -16,14 +16,13 @@ build:
   number: 0
   run_exports:
     - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
-  skip: true  # [not linux]
+  skip: true  # [not linux or cuda_compiler_version == "10.2"]
 
 requirements:
   build:
     - {{ compiler('cxx') }}
     - {{ compiler('fortran') }}  # [not win]
     - {{ compiler('cuda') }}  # [cuda_compiler_version != "None"]
-    - cub  # [cuda_compiler_version != "None"]
     - cmake
     - ninja
     - m2-patch  # [win]
