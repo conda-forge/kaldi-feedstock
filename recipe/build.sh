@@ -4,9 +4,8 @@ mkdir build
 
 pushd build
 
-echo "${CMAKE_ARGS}"
 
-cmake -GNinja ${CMAKE_ARGS} -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON -DCMAKE_BUILD_TYPE=Release \
+cmake -GNinja -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON -DCMAKE_BUILD_TYPE=Release \
               -DCONDA_ROOT="${PREFIX}" \
               -DCMAKE_INSTALL_PREFIX="${PREFIX}"   -DKALDI_BUILD_TEST=OFF \
               -DOVERRIDE_KALDI_VERSION="${PKG_VERSION}" ..
