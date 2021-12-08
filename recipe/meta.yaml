@@ -1,5 +1,5 @@
-{% set version = "5.5.985" %}
-{% set commit = "94f3762603ba31e39b8ebf618cf0608fa5f1338f" %}
+{% set version = "5.5.992" %}
+{% set commit = "a92babfe74532bc2612d7f342d8f668e592413f9" %}
 
 package:
   name: kaldi
@@ -7,35 +7,48 @@ package:
 
 source:
   fn: {{ version }}-{{ commit }}.tar.gz
-  url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
-  sha256: 6235b76b4142e99afab5115472c7f77ebd65b9f01a5427ed57fa34ec63a77810
+  url: https://github.com/kaldi-asr/kaldi/archive/a92babfe74532bc2612d7f342d8f668e592413f9.tar.gz
+  sha256: 66f3731e0c23efed870e8956be876436ffe44ea823814c895af779531904715b
   patches:
     - cmake.patch
 
 build:
   number: 0
-    
+  run_exports:
+    - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
+
 requirements:
   build:
     - {{ compiler('cxx') }}
     - {{ compiler('fortran') }}  # [not win]
+    #- {{ compiler('cuda') }}  # [cuda_compiler_version != "None"]
     - cmake
-    - make  # [not win]
-    - m2-patch  # [win]
     - ninja
+    - m2-patch  # [win]
     - libtool  # [not win]
     - automake  # [not win]
   host:
-    - libblas
-    - libcblas
-    - liblapack
-    - blas-devel
-    - pthreads-win32  # [win]
+    - pthreads-win32        # [win]
+    - mkl-devel             # [x86]
+    - mkl        # [x86]
+    - libblas * *mkl       # [x86]
+    - libcblas * *mkl       # [x86]
+    - liblapack * *mkl       # [x86]
+    - libblas               # [not x86]
+    - libcblas              # [not x86]
+    - liblapack             # [not x86]
+    - openblas              # [not x86]
+    - blas-devel            # [not x86]
     - zlib
+    - icu
   run:
-    - libblas
-    - libcblas
-    - liblapack
+    - mkl         # [x86]
+    - libblas * *mkl       # [x86]
+    - libcblas * *mkl       # [x86]
+    - liblapack * *mkl       # [x86]
+    - libblas               # [not x86]
+    - libcblas              # [not x86]
+    - liblapack             # [not x86]
 
 test:
   requires:
