@@ -5,7 +5,7 @@ channel_targets:
 cxx_compiler:
 - vs2019
 icu:
-- '68'
+- '69'
 mkl:
 - '2021'
 mkl_devel:

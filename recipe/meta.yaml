@@ -13,7 +13,7 @@ source:
     - cmake.patch
 
 build:
-  number: 0
+  number: 1
   run_exports:
     - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
 
