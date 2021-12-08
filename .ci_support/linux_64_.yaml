@@ -15,7 +15,7 @@ fortran_compiler:
 fortran_compiler_version:
 - '9'
 icu:
-- '68'
+- '69'
 mkl:
 - '2021'
 mkl_devel:
