@@ -4,7 +4,7 @@ import os
 
 lib_exts = {'darwin': '.dylib',
             'win32': '.dll',
-            'linux': ''
+            'linux': '.so'
             }
 
 def check_outputs(bins):
