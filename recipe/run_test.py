@@ -2,6 +2,11 @@ import subprocess
 import sys
 import os
 
+lib_exts = {'darwin': '.dylib',
+            'win32': '.dll',
+            'linux': ''
+            }
+
 def check_outputs(bins):
     for bin_name in bins.split():
         print(f'Testing {bin_name}')
@@ -18,6 +23,18 @@ def check_headers(key, header_files):
     for header_name in header_files.split():
         path = os.path.join(prefix, 'include', 'kaldi', key, header_name)
         print(f'Testing {header_name}')
+        if not os.path.exists(path):
+            print(f"{path} does not exist")
+            sys.exit(1)
+
+def check_libraries(libraries_files):
+    if sys.platform == 'win32':
+        prefix = os.environ['LIBRARY_PREFIX']
+    else:
+        prefix = os.environ['PREFIX']
+    for library_name in libraries_files.split():
+        path = os.path.join(prefix, 'lib', library_name + lib_exts[sys.platform])
+        print(f'Testing {library_name}')
         if not os.path.exists(path):
             print(f"{path} does not exist")
             sys.exit(1)
@@ -364,6 +381,13 @@ const-integer-set.h      kaldi-cygwin-io-inl.h  kaldi-pipebuf.h    parse-options
 edit-distance-inl.h      kaldi-holder-inl.h     kaldi-semaphore.h  simple-io-funcs.h""",
            }
 
+libraries = """libkaldi-base        libkaldi-gmm         libkaldi-matrix      libkaldi-rnnlm
+libkaldi-chain       libkaldi-hmm         libkaldi-nnet        libkaldi-sgmm2
+libkaldi-cudamatrix  libkaldi-ivector     libkaldi-nnet2       libkaldi-transform
+libkaldi-decoder     libkaldi-kws         libkaldi-nnet3       libkaldi-tree
+libkaldi-feat        libkaldi-lat         libkaldi-online      libkaldi-util
+libkaldi-fstext      libkaldi-lm          libkaldi-online2"""
+
 if __name__ == '__main__':
     check_outputs(openfst_bins)
     check_outputs(bins)
@@ -390,3 +414,6 @@ if __name__ == '__main__':
         if sys.platform == 'win32' and k in ['online', 'online2']:
             continue
         check_headers(k, v)
+
+    if sys.platform != 'win32':
+        check_libraries(libraries)
