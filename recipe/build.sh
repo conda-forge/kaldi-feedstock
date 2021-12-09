@@ -4,6 +4,11 @@ mkdir build
 
 pushd build
 
+export LDFLAGS="$(echo $LDFLAGS | sed 's/-Wl,-dead_strip_dylibs//g')"
+export LDFLAGS_LD="$(echo $LDFLAGS_LD | sed 's/-dead_strip_dylibs//g')"
+export CXXFLAGS="$CXXFLAGS -Wno-deprecated-declarations"
+export CFLAGS="$CFLAGS -Wno-deprecated-declarations"
+
 
 cmake -GNinja -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON -DCMAKE_BUILD_TYPE=Release \
               -DCONDA_ROOT="${PREFIX}" \
