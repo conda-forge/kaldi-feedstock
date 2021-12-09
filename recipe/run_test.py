@@ -11,11 +11,15 @@ def check_outputs(bins):
             sys.exit(1)
 
 def check_headers(key, header_files):
-    prefix = os.environ['PREFIX']
+    if sys.platform == 'win32':
+        prefix = os.environ['LIBRARY_PREFIX']
+    else:
+        prefix = os.environ['PREFIX']
     for header_name in header_files.split():
+        path = os.path.join(prefix, 'include', 'kaldi', key, header_name)
         print(f'Testing {header_name}')
-        if not os.path.exists(os.path.join(prefix, 'include', key, header_name)):
-            print(f"{header_name} does not exist")
+        if not os.path.exists(path):
+            print(f"{path} does not exist")
             sys.exit(1)
 
 openfst_bins="""fstarcsort 
@@ -381,3 +385,8 @@ if __name__ == '__main__':
     if sys.platform != 'win32':
         check_outputs(online_bins)
         check_outputs(online2_bins)
+
+    for k, v in headers.items():
+        if sys.platform == 'win32' and k in ['online', 'online2']:
+            continue
+        check_headers(k, v)
