@@ -24,8 +24,8 @@ source ${MINIFORGE_HOME}/etc/profile.d/conda.sh
 conda activate base
 
 echo -e "\n\nInstalling conda-forge-ci-setup=3 and conda-build."
-mamba install -n base --quiet --yes "conda-forge-ci-setup=3" conda-build pip boa
-mamba update -n base --quiet --yes "conda-forge-ci-setup=3" conda-build pip boa
+mamba install -n base --update-specs --quiet --yes "conda-forge-ci-setup=3" conda-build pip boa
+mamba update -n base --update-specs --quiet --yes "conda-forge-ci-setup=3" conda-build pip boa
 
 
 

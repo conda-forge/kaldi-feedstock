@@ -13,7 +13,7 @@ source:
     - cmake.patch
 
 build:
-  number: 3
+  number: 4
 
 requirements:
   build:
@@ -27,26 +27,26 @@ requirements:
     - automake  # [not win]
   host:
     - pthreads-win32        # [win]
-    - mkl-devel             # [x86]
+    - mkl-devel             # [x86 and build_platform == target_platform]
     - mkl        # [x86]
-    - libblas * *mkl       # [x86]
-    - libcblas * *mkl       # [x86]
-    - liblapack * *mkl       # [x86]
-    - libblas               # [not x86]
-    - libcblas              # [not x86]
-    - liblapack             # [not x86]
-    - openblas              # [not x86]
-    - blas-devel            # [not x86]
+    - libblas * *mkl       # [x86 and build_platform == target_platform]
+    - libcblas * *mkl       # [x86 and build_platform == target_platform]
+    - liblapack * *mkl       # [x86 and build_platform == target_platform]
+    - libblas               # [not x86 or build_platform != target_platform]
+    - libcblas              # [not x86 or build_platform != target_platform]
+    - liblapack             # [not x86 or build_platform != target_platform]
+    - openblas              # [not x86 or build_platform != target_platform]
+    - blas-devel            # [not x86 or build_platform != target_platform]
     - zlib
     - icu
   run:
-    - mkl         # [x86]
-    - libblas * *mkl       # [x86]
-    - libcblas * *mkl       # [x86]
-    - liblapack * *mkl       # [x86]
-    - libblas               # [not x86]
-    - libcblas              # [not x86]
-    - liblapack             # [not x86]
+    - mkl         # [x86 and build_platform == target_platform]
+    - libblas * *mkl       # [x86 and build_platform == target_platform]
+    - libcblas * *mkl       # [x86 and build_platform == target_platform]
+    - liblapack * *mkl       # [x86 and build_platform == target_platform]
+    - libblas               # [not x86 or build_platform != target_platform]
+    - libcblas              # [not x86 or build_platform != target_platform]
+    - liblapack             # [not x86 or build_platform != target_platform]
 
 test:
   requires:
