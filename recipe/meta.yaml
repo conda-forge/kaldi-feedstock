@@ -24,6 +24,14 @@ build:
     - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
   skip: true  # [cuda_compiler_version == "10.2"]
 
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - {{ compiler('fortran') }}  # [not win]
+    - {{ compiler('cuda') }}  # [cuda_compiler_version != "None"]
+    - cmake
+    - ninja
+
 outputs:
   - name: kaldi
     build:
