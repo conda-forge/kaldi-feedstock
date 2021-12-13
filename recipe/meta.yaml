@@ -71,10 +71,8 @@ outputs:
         - libcblas * *openblas             # [not x86]
         - liblapack * *openblas            # [not x86]
         - openblas             # [not x86]
-
-    test:
-      requires:
         - openfst  # [not win]
+
   {% set kaldi_cpu_gpu = "kaldi-cpu" %}   # [cuda_compiler_version == "None"]
   {% set kaldi_cpu_gpu = "kaldi-gpu" %}   # [cuda_compiler_version != "None"]
   - name: {{ kaldi_cpu_gpu }}
@@ -88,10 +86,6 @@ outputs:
       requirements:
         run:
           - {{ pin_subpackage("kaldi", exact=True) }}
-
-    test:
-      requires:
-        - openfst  # [not win]
 
 about:
   home: http://kaldi-asr.org/
