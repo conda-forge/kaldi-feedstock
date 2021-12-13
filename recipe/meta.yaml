@@ -24,14 +24,14 @@ requirements:
 outputs:
   - name: kaldi
     build:
-      string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
+      string: cuda{{ cuda_compiler_version | replace('.', '') }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
       string: cpu_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [cuda_compiler_version == "None"]
       script_env:
         - CPPFLAGS="-std=c++14"  # [win]
         - CXXFLAGS="-std=c++14 -Wno-deprecated-declarations"  # [win]
         - CMAKE_CXX_STANDARD=14  # [win]
-        - MATHLIB="MKL"  # [x86]
-        - MATHLIB="OpenBLAS"  # [not x86]
+        - MATHLIB=MKL  # [x86]
+        - MATHLIB=OpenBLAS  # [not x86]
       run_exports:
         # ensure matching proc-type
         - kaldi =*=*_{{ kaldi_proc_type }}
