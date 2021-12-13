@@ -5,7 +5,7 @@ mkdir build
 cd build
 
 cmake -GNinja  -DOVERRIDE_KALDI_VERSION="%PKG_VERSION%" -DCMAKE_BUILD_TYPE=Release ^
-                -DCONDA_ROOT="%LIBRARY_PREFIX%" ^
+                -DCONDA_ROOT="%LIBRARY_PREFIX%" -DMATHLIB="%MATHLIB%"  ^
                 -DCMAKE_INSTALL_PREFIX="%LIBRARY_PREFIX%"  ^
                 -DKALDI_BUILD_TEST=OFF ..
 

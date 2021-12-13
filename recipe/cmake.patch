@@ -1,21 +1,21 @@
-From 9d3b8539a001766259675f42d903408471d53492 Mon Sep 17 00:00:00 2001
+From e4b599eb40ad3fe1c18dd857307785d3c5d0e561 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
 
 ---
- CMakeLists.txt                  | 165 +++---
+ CMakeLists.txt                  | 192 ++++---
  cmake/FindBLAS.cmake            | 902 --------------------------------
  cmake/FindLAPACK.cmake          | 496 ------------------
  cmake/Utils.cmake               |   2 +-
  cmake/gen_cmake_skeleton.py     |  50 +-
  cmake/third_party/openfst.cmake |  79 ++-
- 6 files changed, 221 insertions(+), 1473 deletions(-)
+ 6 files changed, 246 insertions(+), 1475 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..c488141 100644
+index 8b2de3a..0d3921c 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -24,24 +24,38 @@ index 8b2de3a..c488141 100644
  project(kaldi)
  
  if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-@@ -8,6 +8,16 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+@@ -8,6 +8,21 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
  include(GNUInstallDirs)
  include(Utils)
  
 +if(CONDA_ROOT)
 +    message(STATUS "Adding ${CONDA_ROOT} directories")
-+    set(CMAKE_INCLUDE_PATH "${CONDA_ROOT}/include")
-+    set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib")
-+    link_directories("${CONDA_ROOT}/lib")
++    if (MSVC)
++        set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib")
++        link_directories("${CONDA_ROOT}/bin")
++        link_directories("${CONDA_ROOT}/lib")
 +
-+    include_directories("${CONDA_ROOT}/include")
++    else()
++        set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib")
++        link_directories("${CONDA_ROOT}/lib")
++
++    endif()
 +
 +endif()
 +
  include(third_party/get_third_party)
  
  include(cmake/third_party/openfst.cmake)
-@@ -66,45 +76,52 @@ link_libraries(${CMAKE_DL_LIBS})
+@@ -38,7 +53,7 @@ if(BUILD_SHARED_LIBS)
+     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+     if(WIN32)
+         set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+-        message(FATAL_ERROR "DLL is not supported currently")
++        #message(FATAL_ERROR "DLL is not supported currently")
+     elseif(APPLE)
+         set(CMAKE_INSTALL_RPATH "@loader_path")
+     else()
+@@ -66,45 +81,69 @@ link_libraries(${CMAKE_DL_LIBS})
  find_package(Threads)
  link_libraries(Threads::Threads)
  
@@ -54,12 +68,23 @@ index 8b2de3a..c488141 100644
 -elseif(MATHLIB STREQUAL "MKL")
 -    if(NOT DEFINED ENV{MKLROOT} OR "$ENV{MKLROOT}" STREQUAL "")
 -        message(FATAL_ERROR "Environment variable MKLROOT is not defined")
--    else()
++if(CONDA_ROOT)
++    if(MATHLIB STREQUAL "MKL")
++        set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
++        find_package(BLAS REQUIRED)
++        find_package(LAPACK REQUIRED)
++        add_definitions(-DHAVE_MKL=1)
++    elseif(MATHLIB STREQUAL "OpenBLAS")
++        set(BLA_VENDOR "OpenBLAS") 
++        find_package(BLAS REQUIRED)
++        find_package(LAPACK REQUIRED)
++        add_definitions(-DHAVE_CLAPACK=1)
++        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
+     else()
 -        message(STATUS "Finding MKL from \"$ENV{MKLROOT}\"")
 -    endif()
 -    normalize_env_path(ENV{MKLROOT})
-+if(CONDA_ROOT)
-     set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
+-    set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
 -    find_package(LAPACK REQUIRED)
 -    add_definitions(-DHAVE_MKL=1)
 -    include_directories($ENV{MKLROOT}/include)
@@ -77,21 +102,25 @@ index 8b2de3a..c488141 100644
 -            " Apple.  Unexplained crashes with reports of NaNs will"
 -            " be caused by this bug, but some recipes will (sometimes) work."
 -        )
--    endif()
++        message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
+     endif()
 -    set(BLA_VENDOR "Apple")
-     find_package(BLAS REQUIRED)
-     find_package(LAPACK REQUIRED)
+-    find_package(BLAS REQUIRED)
+-    find_package(LAPACK REQUIRED)
 -    add_definitions(-DHAVE_CLAPACK=1)
 -    link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
-+    add_definitions(-DHAVE_MKL=1)
 +    link_libraries(BLAS::BLAS)
 +    link_libraries(LAPACK::LAPACK)
  else()
 -    message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
 +    if(MATHLIB STREQUAL "OpenBLAS")
++        set(BLA_VENDOR "OpenBLAS") 
++        find_package(BLAS REQUIRED)
++        find_package(LAPACK REQUIRED)
 +        add_definitions(-DHAVE_CLAPACK=1)
 +        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
-+        link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
++        link_libraries(BLAS::BLAS)
++        link_libraries(LAPACK::LAPACK)
 +    elseif(MATHLIB STREQUAL "MKL")
 +        if(NOT DEFINED ENV{MKLROOT} OR "$ENV{MKLROOT}" STREQUAL "")
 +            message(FATAL_ERROR "Environment variable MKLROOT is not defined")
@@ -100,10 +129,12 @@ index 8b2de3a..c488141 100644
 +        endif()
 +        normalize_env_path(ENV{MKLROOT})
 +        set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
++        find_package(BLAS REQUIRED)
 +        find_package(LAPACK REQUIRED)
 +        add_definitions(-DHAVE_MKL=1)
 +        include_directories($ENV{MKLROOT}/include)
-+        link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
++        link_libraries(BLAS::BLAS)
++        link_libraries(LAPACK::LAPACK)
 +    elseif(MATHLIB STREQUAL "Accelerate")
 +        execute_process(COMMAND sw_vers -productVersion
 +            OUTPUT_VARIABLE MACOS_VERSION)
@@ -122,28 +153,30 @@ index 8b2de3a..c488141 100644
 +        find_package(BLAS REQUIRED)
 +        find_package(LAPACK REQUIRED)
 +        add_definitions(-DHAVE_CLAPACK=1)
-+        link_libraries(${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
++        link_libraries(BLAS::BLAS)
++        link_libraries(LAPACK::LAPACK)
 +    else()
 +        message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
 +    endif()
  endif()
  
  if(MSVC)
-@@ -125,7 +142,12 @@ if(MSVC)
+@@ -125,7 +164,13 @@ if(MSVC)
      endif()
  endif()
  
 -find_package(CUDA)
 +if (CONDA_ROOT)
-+    # find_package(CUDAToolkit) # Necessary for conda compilation, but there are some issues currently with CUDA on their azure pipelines
-+    find_package(CUDA)
++    set(CUDA_FOUND OFF)    
++#find_package(CUDAToolkit)
++    #find_package(CUDA)
 +else()
 +    find_package(CUDA)
 +endif()
  if(CUDA_FOUND)
      set(CUDA_PROPAGATE_HOST_FLAGS ON)
      set(KALDI_CUDA_NVCC_FLAGS "--default-stream=per-thread;-std=c++${CMAKE_CXX_STANDARD}")
-@@ -158,18 +180,28 @@ if(CUDA_FOUND)
+@@ -158,18 +203,28 @@ if(CUDA_FOUND)
      include_directories(${NvToolExt_INCLUDE_DIR})
      link_libraries(${NvToolExt_LIBRARIES})
  
@@ -178,7 +211,7 @@ index 8b2de3a..c488141 100644
  endif()
  
  # get_third_party(openfst)
-@@ -208,8 +240,10 @@ add_subdirectory(src/nnet3)
+@@ -208,8 +263,10 @@ add_subdirectory(src/nnet3)
  add_subdirectory(src/rnnlm)
  add_subdirectory(src/chain)
  add_subdirectory(src/ivector)
@@ -191,7 +224,7 @@ index 8b2de3a..c488141 100644
  add_subdirectory(src/kws)
  
  add_subdirectory(src/itf)
-@@ -228,6 +262,7 @@ endif()
+@@ -228,6 +285,7 @@ endif()
  # add all native executables
  add_subdirectory(src/bin)
  add_subdirectory(src/gmmbin)
@@ -199,7 +232,7 @@ index 8b2de3a..c488141 100644
  add_subdirectory(src/featbin)
  add_subdirectory(src/sgmm2bin)
  add_subdirectory(src/fstbin)
-@@ -239,8 +274,10 @@ add_subdirectory(src/nnet3bin)
+@@ -239,8 +297,10 @@ add_subdirectory(src/nnet3bin)
  add_subdirectory(src/rnnlmbin)
  add_subdirectory(src/chainbin)
  add_subdirectory(src/ivectorbin)
@@ -212,7 +245,7 @@ index 8b2de3a..c488141 100644
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables
-@@ -249,19 +286,21 @@ if(CUDA_FOUND)
+@@ -249,19 +309,21 @@ if(CUDA_FOUND)
      add_subdirectory(src/cudadecoderbin)
  endif()
  
@@ -1851,5 +1884,5 @@ index edb4314..a6fbad3 100644
 +    endif() 
  endif()
 -- 
-2.34.1
+2.33.0
 

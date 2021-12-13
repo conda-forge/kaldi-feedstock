@@ -34,10 +34,31 @@ Current build status
         <table>
           <thead><tr><th>Variant</th><th>Status</th></tr></thead>
           <tbody><tr>
-              <td>linux_64</td>
+              <td>linux_64_cuda_compiler_version11.0cxx_compiler_version9fortran_compiler_version9</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=3060&branchName=master">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/kaldi-feedstock?branchName=master&jobName=linux&configuration=linux_64_" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/kaldi-feedstock?branchName=master&jobName=linux&configuration=linux_64_cuda_compiler_version11.0cxx_compiler_version9fortran_compiler_version9" alt="variant">
+                </a>
+              </td>
+            </tr><tr>
+              <td>linux_64_cuda_compiler_version11.1cxx_compiler_version9fortran_compiler_version9</td>
+              <td>
+                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=3060&branchName=master">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/kaldi-feedstock?branchName=master&jobName=linux&configuration=linux_64_cuda_compiler_version11.1cxx_compiler_version9fortran_compiler_version9" alt="variant">
+                </a>
+              </td>
+            </tr><tr>
+              <td>linux_64_cuda_compiler_version11.2cxx_compiler_version9fortran_compiler_version9</td>
+              <td>
+                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=3060&branchName=master">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/kaldi-feedstock?branchName=master&jobName=linux&configuration=linux_64_cuda_compiler_version11.2cxx_compiler_version9fortran_compiler_version9" alt="variant">
+                </a>
+              </td>
+            </tr><tr>
+              <td>linux_64_cuda_compiler_versionNonecxx_compiler_version9fortran_compiler_version9</td>
+              <td>
+                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=3060&branchName=master">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/kaldi-feedstock?branchName=master&jobName=linux&configuration=linux_64_cuda_compiler_versionNonecxx_compiler_version9fortran_compiler_version9" alt="variant">
                 </a>
               </td>
             </tr><tr>
@@ -48,10 +69,38 @@ Current build status
                 </a>
               </td>
             </tr><tr>
-              <td>win_64</td>
+              <td>osx_arm64</td>
               <td>
                 <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=3060&branchName=master">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/kaldi-feedstock?branchName=master&jobName=win&configuration=win_64_" alt="variant">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/kaldi-feedstock?branchName=master&jobName=osx&configuration=osx_arm64_" alt="variant">
+                </a>
+              </td>
+            </tr><tr>
+              <td>win_64_cuda_compiler_version11.0</td>
+              <td>
+                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=3060&branchName=master">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/kaldi-feedstock?branchName=master&jobName=win&configuration=win_64_cuda_compiler_version11.0" alt="variant">
+                </a>
+              </td>
+            </tr><tr>
+              <td>win_64_cuda_compiler_version11.1</td>
+              <td>
+                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=3060&branchName=master">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/kaldi-feedstock?branchName=master&jobName=win&configuration=win_64_cuda_compiler_version11.1" alt="variant">
+                </a>
+              </td>
+            </tr><tr>
+              <td>win_64_cuda_compiler_version11.2</td>
+              <td>
+                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=3060&branchName=master">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/kaldi-feedstock?branchName=master&jobName=win&configuration=win_64_cuda_compiler_version11.2" alt="variant">
+                </a>
+              </td>
+            </tr><tr>
+              <td>win_64_cuda_compiler_versionNone</td>
+              <td>
+                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=3060&branchName=master">
+                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/kaldi-feedstock?branchName=master&jobName=win&configuration=win_64_cuda_compiler_versionNone" alt="variant">
                 </a>
               </td>
             </tr>
@@ -68,6 +117,8 @@ Current release info
 | Name | Downloads | Version | Platforms |
 | --- | --- | --- | --- |
 | [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi-green.svg)](https://anaconda.org/conda-forge/kaldi) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi.svg)](https://anaconda.org/conda-forge/kaldi) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi.svg)](https://anaconda.org/conda-forge/kaldi) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi.svg)](https://anaconda.org/conda-forge/kaldi) |
+| [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi--cpu-green.svg)](https://anaconda.org/conda-forge/kaldi-cpu) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi-cpu.svg)](https://anaconda.org/conda-forge/kaldi-cpu) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi-cpu.svg)](https://anaconda.org/conda-forge/kaldi-cpu) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi-cpu.svg)](https://anaconda.org/conda-forge/kaldi-cpu) |
+| [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi--gpu-green.svg)](https://anaconda.org/conda-forge/kaldi-gpu) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi-gpu.svg)](https://anaconda.org/conda-forge/kaldi-gpu) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi-gpu.svg)](https://anaconda.org/conda-forge/kaldi-gpu) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi-gpu.svg)](https://anaconda.org/conda-forge/kaldi-gpu) |
 
 Installing kaldi
 ================
@@ -79,10 +130,10 @@ conda config --add channels conda-forge
 conda config --set channel_priority strict
 ```
 
-Once the `conda-forge` channel has been enabled, `kaldi` can be installed with:
+Once the `conda-forge` channel has been enabled, `kaldi, kaldi-cpu, kaldi-gpu` can be installed with:
 
 ```
-conda install kaldi
+conda install kaldi kaldi-cpu kaldi-gpu
 ```
 
 It is possible to list all of the versions of `kaldi` available on your platform with:
