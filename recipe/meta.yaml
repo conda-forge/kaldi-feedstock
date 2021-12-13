@@ -14,12 +14,13 @@ source:
 
 build:
   number: 4
+  skip: true  # [cuda_compiler_version == "10.2"]
 
 requirements:
   build:
     - {{ compiler('cxx') }}
     - {{ compiler('fortran') }}  # [not win]
-    #- {{ compiler('cuda') }}  # [cuda_compiler_version != "None"]
+    - {{ compiler('cuda') }}  # [cuda_compiler_version != "None"]
     - cmake
     - ninja
     - m2-patch  # [win]
