@@ -1,8 +1,5 @@
 #! /usr/bin/env bash
 
-mkdir build
-
-pushd build
 
 export CFLAGS="$(echo $CFLAGS | sed 's/-fvisibility-inlines-hidden//g')"
 export CXXFLAGS="$(echo $CXXFLAGS | sed 's/-fvisibility-inlines-hidden//g')"
@@ -81,8 +78,12 @@ export CMAKE_BUILD_WITH_INSTALL_RPATH=ON
 export CMAKE_INSTALL_LIBDIR=lib
 export CMAKE_CXX_STANDARD=14
 
+mkdir build
+
+pushd build
+
 cmake ${CMAKE_ARGS} \
-              -DMATHLIB="${MATHLIB}"
+              -DMATHLIB="${MATHLIB}" \
               -DCONDA_ROOT="${PREFIX}" \
                -DKALDI_BUILD_TEST=OFF \
               -DOVERRIDE_KALDI_VERSION="${PKG_VERSION}" ..
