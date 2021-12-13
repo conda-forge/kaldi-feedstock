@@ -13,6 +13,10 @@ source:
     - cmake.patch
 
 build:
+  script_env:
+    - CPPFLAGS="-std=c++14"  # [win]
+    - CXXFLAGS="-std=c++14 -Wno-deprecated-declarations"  # [win]
+    - CMAKE_CXX_STANDARD=14  # [win]
   number: 4
   skip: true  # [cuda_compiler_version == "10.2"]
 
@@ -33,10 +37,10 @@ requirements:
     - libblas * *mkl       # [x86]
     - libcblas * *mkl       # [x86]
     - liblapack * *mkl       # [x86]
-    - libblas               # [not x86]
-    - libcblas              # [not x86]
-    - liblapack             # [not x86]
-    - openblas              # [not x86]
+    - libblas * *{{ blas_impl }}               # [not x86]
+    - libcblas * *{{ blas_impl }}              # [not x86]
+    - liblapack * *{{ blas_impl }}             # [not x86]
+    - {{ blas_impl }}              # [not x86]
     - blas-devel            # [not x86]
     - zlib
     - icu
@@ -45,9 +49,10 @@ requirements:
     - libblas * *mkl       # [x86]
     - libcblas * *mkl       # [x86]
     - liblapack * *mkl       # [x86]
-    - libblas               # [not x86]
-    - libcblas              # [not x86]
-    - liblapack             # [not x86]
+    - libblas * *{{ blas_impl }}               # [not x86]
+    - libcblas * *{{ blas_impl }}              # [not x86]
+    - liblapack * *{{ blas_impl }}             # [not x86]
+    - {{ blas_impl }}              # [not x86]
 
 test:
   requires:
