@@ -17,6 +17,8 @@ build:
     - CPPFLAGS="-std=c++14"  # [win]
     - CXXFLAGS="-std=c++14 -Wno-deprecated-declarations"  # [win]
     - CMAKE_CXX_STANDARD=14  # [win]
+    - MATHLIB="MKL"  # [x86]
+    - MATHLIB="OpenBLAS"  # [not x86]
   number: 4
   skip: true  # [cuda_compiler_version == "10.2"]
 

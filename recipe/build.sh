@@ -51,7 +51,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     export USE_DISTRIBUTED=1
 
     if [[ "$target_platform" == "osx-arm64" ]]; then
-        export BLAS=OpenBLAS
         export USE_MKLDNN=0
         # There is a problem with pkg-config
         # See https://github.com/conda-forge/pkg-config-feedstock/issues/38
@@ -83,6 +82,7 @@ export CMAKE_INSTALL_LIBDIR=lib
 export CMAKE_CXX_STANDARD=14
 
 cmake ${CMAKE_ARGS} \
+              -DMATHLIB="${MATHLIB}"
               -DCONDA_ROOT="${PREFIX}" \
                -DKALDI_BUILD_TEST=OFF \
               -DOVERRIDE_KALDI_VERSION="${PKG_VERSION}" ..
