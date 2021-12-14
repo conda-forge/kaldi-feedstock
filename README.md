@@ -117,8 +117,6 @@ Current release info
 | Name | Downloads | Version | Platforms |
 | --- | --- | --- | --- |
 | [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi-green.svg)](https://anaconda.org/conda-forge/kaldi) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi.svg)](https://anaconda.org/conda-forge/kaldi) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi.svg)](https://anaconda.org/conda-forge/kaldi) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi.svg)](https://anaconda.org/conda-forge/kaldi) |
-| [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi--cpu-green.svg)](https://anaconda.org/conda-forge/kaldi-cpu) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi-cpu.svg)](https://anaconda.org/conda-forge/kaldi-cpu) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi-cpu.svg)](https://anaconda.org/conda-forge/kaldi-cpu) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi-cpu.svg)](https://anaconda.org/conda-forge/kaldi-cpu) |
-| [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi--gpu-green.svg)](https://anaconda.org/conda-forge/kaldi-gpu) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi-gpu.svg)](https://anaconda.org/conda-forge/kaldi-gpu) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi-gpu.svg)](https://anaconda.org/conda-forge/kaldi-gpu) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi-gpu.svg)](https://anaconda.org/conda-forge/kaldi-gpu) |
 
 Installing kaldi
 ================
@@ -130,10 +128,10 @@ conda config --add channels conda-forge
 conda config --set channel_priority strict
 ```
 
-Once the `conda-forge` channel has been enabled, `kaldi, kaldi-cpu, kaldi-gpu` can be installed with:
+Once the `conda-forge` channel has been enabled, `kaldi` can be installed with:
 
 ```
-conda install kaldi kaldi-cpu kaldi-gpu
+conda install kaldi
 ```
 
 It is possible to list all of the versions of `kaldi` available on your platform with:

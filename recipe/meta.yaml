@@ -1,5 +1,6 @@
 {% set version = "5.5.992" %}
 {% set commit = "a92babfe74532bc2612d7f342d8f668e592413f9" %}
+{% set kaldi_proc_type = "cuda" if cuda_compiler_version != "None" else "cpu" %}
 
 package:
   name: kaldi
@@ -13,31 +14,29 @@ source:
     - cmake.patch
 
 build:
-  script_env:
-    - CPPFLAGS="-std=c++14"  # [win]
-    - CXXFLAGS="-std=c++14 -Wno-deprecated-declarations"  # [win]
-    - CMAKE_CXX_STANDARD=14  # [win]
-    - MATHLIB="MKL"  # [x86]
-    - MATHLIB="OpenBLAS"  # [not x86]
-  number: 4
-  run_exports:
-    - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
+  number: 5
   skip: true  # [cuda_compiler_version == "10.2"]
 
 requirements:
   build:
     - {{ compiler('cxx') }}
-    - {{ compiler('fortran') }}  # [not win]
-    - {{ compiler('cuda') }}  # [cuda_compiler_version != "None"]
-    - cmake
-    - ninja
 
 outputs:
   - name: kaldi
     build:
-      string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
-      string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [cuda_compiler_version == "None"]
-      detect_binary_files_with_prefix: false
+      string: cuda{{ cuda_compiler_version | replace('.', '') }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
+      string: cpu_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [cuda_compiler_version == "None"]
+      script_env:
+        - CPPFLAGS="-std=c++14"  # [win]
+        - CXXFLAGS="-std=c++14 -Wno-deprecated-declarations"  # [win]
+        - CMAKE_CXX_STANDARD=14  # [win]
+        - MATHLIB=MKL  # [x86]
+        - MATHLIB=OpenBLAS  # [not x86]
+      run_exports:
+        # ensure matching proc-type
+        - kaldi =*=*_{{ kaldi_proc_type }}
+    script: build_kaldi.sh  # [not win]
+    script: bld_kaldi.bat   # [win]
     requirements:
       build:
         - {{ compiler('cxx') }}
@@ -72,20 +71,6 @@ outputs:
         - liblapack * *openblas            # [not x86]
         - openblas             # [not x86]
         - openfst  # [not win]
-
-  {% set kaldi_cpu_gpu = "kaldi-cpu" %}   # [cuda_compiler_version == "None"]
-  {% set kaldi_cpu_gpu = "kaldi-gpu" %}   # [cuda_compiler_version != "None"]
-  - name: {{ kaldi_cpu_gpu }}
-    build:
-      string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
-      string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [cuda_compiler_version == "None"]
-      detect_binary_files_with_prefix: False
-      # weigh down cpu implementation and give cuda preference
-      track_features:
-        - kaldi-cpu                                      # [cuda_compiler_version == "None"]
-      requirements:
-        run:
-          - {{ pin_subpackage("kaldi", exact=True) }}
 
 about:
   home: http://kaldi-asr.org/
