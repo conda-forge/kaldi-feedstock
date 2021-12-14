@@ -34,9 +34,6 @@ outputs:
         - CMAKE_CXX_STANDARD=14  # [win]
         - MATHLIB=MKL  # [x86]
         - MATHLIB=OpenBLAS  # [not x86]
-      run_exports:
-        # ensure matching proc-type
-        - kaldi =*=*_{{ kaldi_proc_type }}
     script: build_kaldi.sh  # [not win]
     script: bld_kaldi.bat   # [win]
     requirements:
