@@ -117,6 +117,8 @@ Current release info
 | Name | Downloads | Version | Platforms |
 | --- | --- | --- | --- |
 | [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi-green.svg)](https://anaconda.org/conda-forge/kaldi) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi.svg)](https://anaconda.org/conda-forge/kaldi) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi.svg)](https://anaconda.org/conda-forge/kaldi) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi.svg)](https://anaconda.org/conda-forge/kaldi) |
+| [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi--cpu-green.svg)](https://anaconda.org/conda-forge/kaldi-cpu) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi-cpu.svg)](https://anaconda.org/conda-forge/kaldi-cpu) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi-cpu.svg)](https://anaconda.org/conda-forge/kaldi-cpu) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi-cpu.svg)](https://anaconda.org/conda-forge/kaldi-cpu) |
+| [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi--cuda-green.svg)](https://anaconda.org/conda-forge/kaldi-cuda) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi-cuda.svg)](https://anaconda.org/conda-forge/kaldi-cuda) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi-cuda.svg)](https://anaconda.org/conda-forge/kaldi-cuda) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi-cuda.svg)](https://anaconda.org/conda-forge/kaldi-cuda) |
 
 Installing kaldi
 ================
@@ -128,10 +130,10 @@ conda config --add channels conda-forge
 conda config --set channel_priority strict
 ```
 
-Once the `conda-forge` channel has been enabled, `kaldi` can be installed with:
+Once the `conda-forge` channel has been enabled, `kaldi, kaldi-cpu, kaldi-cuda` can be installed with:
 
 ```
-conda install kaldi
+conda install kaldi kaldi-cpu kaldi-cuda
 ```
 
 It is possible to list all of the versions of `kaldi` available on your platform with:
