@@ -7,7 +7,13 @@ lib_exts = {'darwin': '.dylib',
             'linux': '.so'
             }
 
-test_cuda = int(os.environ.get('TEST_CUDA', 0)) == 1
+test_cuda = bool(int(os.environ.get('TEST_CUDA', 0)))
+cf_cuda_enabled = bool(int(os.environ.get('CF_CUDA_ENABLED', 0)))
+if test_cuda or cf_cuda_enabled:
+    test_cuda = True
+    print("TESTING CUDA EXPORTS AS WELL")
+else:
+    print("TESTING CUDA NOT ENABLED")
 
 def check_outputs(bins):
     for bin_name in bins.split():

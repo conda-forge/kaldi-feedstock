@@ -15,7 +15,7 @@ source:
 
 build:
   number: 7
-  skip: true  # [cuda_compiler_version == "10.2"]
+  skip: true  # [cuda_compiler_version != "11.2" or not linux]
   run_exports:
     - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
 
