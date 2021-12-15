@@ -14,7 +14,7 @@ source:
     - cmake.patch
 
 build:
-  number: 6
+  number: 7
   skip: true  # [cuda_compiler_version == "10.2"]
   run_exports:
     - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
@@ -69,7 +69,11 @@ outputs:
         - libcblas * *openblas             # [not x86]
         - liblapack * *openblas            # [not x86]
         - openblas             # [not x86]
-        - openfst  # [not win]
+        - openfst  # [not win and build_platform == target_platform]
+    test:
+      script_env:
+        - TEST_CUDA=1  # [cuda_compiler_version != "None"]
+        - TEST_CUDA=0  # [cuda_compiler_version == "None"]
 
   {% set kaldi_cpu_gpu = "kaldi-cpu" %}   # [cuda_compiler_version == "None"]
   {% set kaldi_cpu_gpu = "kaldi-cuda" %}   # [cuda_compiler_version != "None"]
@@ -84,6 +88,10 @@ outputs:
     requirements:
       run:
         - {{ pin_subpackage("kaldi", exact=True) }}
+    test:
+      script_env:
+        - TEST_CUDA=1  # [cuda_compiler_version != "None"]
+        - TEST_CUDA=0  # [cuda_compiler_version == "None"]
 
 
 about:

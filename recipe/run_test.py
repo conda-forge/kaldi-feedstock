@@ -7,6 +7,8 @@ lib_exts = {'darwin': '.dylib',
             'linux': '.so'
             }
 
+test_cuda = int(os.environ.get('TEST_CUDA', 0)) == 1
+
 def check_outputs(bins):
     for bin_name in bins.split():
         print(f'Testing {bin_name}')
@@ -107,6 +109,15 @@ chain_bins="""chain-est-phone-lm chain-get-supervision chain-make-den-fst
         chain-make-num-fst-e2e
 		nnet3-chain-train2 nnet3-chain-combine2"""
 
+cuda_decoder_bins = """batched-wav-nnet3-cuda2 batched-wav-nnet3-cuda-online batched-wav-nnet3-cuda"""
+
+cuda_feat_bins = """compute-mfcc-feats-cuda 
+           compute-online-feats-cuda 
+           compute-fbank-feats-cuda 
+           apply-batched-cmvn-online-cuda 
+           compute-mfcc-online-batched-cuda 
+           compute-fbank-online-batched-cuda 
+           compute-online-feats-batched-cuda"""
 
 feat_bins="""add-deltas add-deltas-sdc append-post-to-feats
            append-vector-to-feats apply-cmvn apply-cmvn-sliding compare-feats
@@ -388,6 +399,22 @@ libkaldi-decoder     libkaldi-kws         libkaldi-nnet3       libkaldi-tree
 libkaldi-feat        libkaldi-lat         libkaldi-online      libkaldi-util
 libkaldi-fstext      libkaldi-lm          libkaldi-online2"""
 
+if test_cuda:
+    headers['cudadecoder'] = """batched-static-nnet3-kernels.h                 cuda-decoder-common.h                   cuda-pipeline-common.h
+batched-static-nnet3.h                         cuda-decoder-kernels-utils.h            decodable-cumatrix.h
+batched-threaded-nnet3-cuda-online-pipeline.h  cuda-decoder-kernels.h                  lattice-postprocessor.h
+batched-threaded-nnet3-cuda-pipeline.h         cuda-decoder.h                          thread-pool-light.h
+batched-threaded-nnet3-cuda-pipeline2.h        cuda-fst.h                              thread-pool.h
+cuda-decodable-itf.h                           cuda-online-pipeline-dynamic-batcher.h"""
+    headers['cudafeat'] = """feature-online-batched-cmvn-cuda-kernels.h      feature-spectral-cuda.h
+feature-online-batched-cmvn-cuda.h              feature-window-cuda.h
+feature-online-batched-ivector-cuda-kernels.h   lane-desc.h
+feature-online-batched-ivector-cuda.h           online-batched-feature-pipeline-cuda.h
+feature-online-batched-spectral-cuda-kernels.h  online-cuda-feature-pipeline.h
+feature-online-batched-spectral-cuda.h          online-ivector-feature-cuda-kernels.h
+feature-online-cmvn-cuda.h                      online-ivector-feature-cuda.h"""
+    libraries += """ libkaldi-cudafeat libkaldi-cudadecoder"""
+
 if __name__ == '__main__':
     check_outputs(openfst_bins)
     check_outputs(bins)
@@ -405,6 +432,10 @@ if __name__ == '__main__':
     check_outputs(nnet3_bins)
     check_outputs(rnnlm_bins)
     check_outputs(sgmm2_bins)
+
+    if test_cuda:
+        check_outputs(cuda_decoder_bins)
+        check_outputs(cuda_feat_bins)
 
     if sys.platform != 'win32':
         check_outputs(online_bins)

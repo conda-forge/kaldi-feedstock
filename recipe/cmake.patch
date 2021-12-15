@@ -1,21 +1,21 @@
-From e4b599eb40ad3fe1c18dd857307785d3c5d0e561 Mon Sep 17 00:00:00 2001
+From bea9d21d19fe2a0b915f64582a29d3c3898a2f77 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
 
 ---
- CMakeLists.txt                  | 192 ++++---
+ CMakeLists.txt                  | 256 +++++----
  cmake/FindBLAS.cmake            | 902 --------------------------------
  cmake/FindLAPACK.cmake          | 496 ------------------
  cmake/Utils.cmake               |   2 +-
- cmake/gen_cmake_skeleton.py     |  50 +-
+ cmake/gen_cmake_skeleton.py     |  46 +-
  cmake/third_party/openfst.cmake |  79 ++-
- 6 files changed, 246 insertions(+), 1475 deletions(-)
+ 6 files changed, 274 insertions(+), 1507 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..0d3921c 100644
+index 8b2de3a..0827a58 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -82,7 +82,8 @@ index 8b2de3a..0d3921c 100644
 +        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
      else()
 -        message(STATUS "Finding MKL from \"$ENV{MKLROOT}\"")
--    endif()
++        message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
+     endif()
 -    normalize_env_path(ENV{MKLROOT})
 -    set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
 -    find_package(LAPACK REQUIRED)
@@ -102,8 +103,7 @@ index 8b2de3a..0d3921c 100644
 -            " Apple.  Unexplained crashes with reports of NaNs will"
 -            " be caused by this bug, but some recipes will (sometimes) work."
 -        )
-+        message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
-     endif()
+-    endif()
 -    set(BLA_VENDOR "Apple")
 -    find_package(BLAS REQUIRED)
 -    find_package(LAPACK REQUIRED)
@@ -161,35 +161,92 @@ index 8b2de3a..0d3921c 100644
  endif()
  
  if(MSVC)
-@@ -125,7 +164,13 @@ if(MSVC)
+@@ -125,51 +164,67 @@ if(MSVC)
      endif()
  endif()
  
 -find_package(CUDA)
+-if(CUDA_FOUND)
+-    set(CUDA_PROPAGATE_HOST_FLAGS ON)
+-    set(KALDI_CUDA_NVCC_FLAGS "--default-stream=per-thread;-std=c++${CMAKE_CXX_STANDARD}")
+-    if(MSVC)
+-        list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /permissive-,/FS,/wd4819,/EHsc,/bigobj")
+-        list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /wd4018,/wd4244,/wd4267,/wd4291,/wd4305")
+-        if(BUILD_SHARED_LIBS)
+-            list(APPEND CUDA_NVCC_FLAGS_RELEASE -Xcompiler /MD)
+-            list(APPEND CUDA_NVCC_FLAGS_DEBUG -Xcompiler /MDd)
 +if (CONDA_ROOT)
 +    set(CUDA_FOUND OFF)    
 +#find_package(CUDAToolkit)
 +    #find_package(CUDA)
 +else()
 +    find_package(CUDA)
-+endif()
- if(CUDA_FOUND)
-     set(CUDA_PROPAGATE_HOST_FLAGS ON)
-     set(KALDI_CUDA_NVCC_FLAGS "--default-stream=per-thread;-std=c++${CMAKE_CXX_STANDARD}")
-@@ -158,18 +203,28 @@ if(CUDA_FOUND)
-     include_directories(${NvToolExt_INCLUDE_DIR})
-     link_libraries(${NvToolExt_LIBRARIES})
- 
++    if(CUDA_FOUND)
++        set(CUDA_PROPAGATE_HOST_FLAGS ON)
++        set(KALDI_CUDA_NVCC_FLAGS "--default-stream=per-thread;-std=c++${CMAKE_CXX_STANDARD}")
++        if(MSVC)
++            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /permissive-,/FS,/wd4819,/EHsc,/bigobj")
++            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /wd4018,/wd4244,/wd4267,/wd4291,/wd4305")
++            if(BUILD_SHARED_LIBS)
++                list(APPEND CUDA_NVCC_FLAGS_RELEASE -Xcompiler /MD)
++                list(APPEND CUDA_NVCC_FLAGS_DEBUG -Xcompiler /MDd)
++            endif()
++        else()
++        #     list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -std=c++${CMAKE_CXX_STANDARD}")
++            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -fPIC")
+         endif()
+-    else()
+-    #     list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -std=c++${CMAKE_CXX_STANDARD}")
+-        list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -fPIC")
++        set(CUDA_NVCC_FLAGS ${KALDI_CUDA_NVCC_FLAGS} ${CUDA_NVCC_FLAGS})
++
++        add_definitions(-DHAVE_CUDA=1)
++        add_definitions(-DCUDA_API_PER_THREAD_DEFAULT_STREAM=1)
++        #include_directories(${CUDA_INCLUDE_DIRS})
++        link_libraries(
++            ${CUDA_LIBRARIES}
++            ${CUDA_CUDA_LIBRARY}
++            ${CUDA_CUBLAS_LIBRARIES}
++            ${CUDA_CUFFT_LIBRARIES}
++            ${CUDA_curand_LIBRARY}
++            ${CUDA_cusolver_LIBRARY}
++            ${CUDA_cusparse_LIBRARY})
++
++        find_package(NvToolExt REQUIRED)
++        include_directories(${NvToolExt_INCLUDE_DIR})
++        link_libraries(${NvToolExt_LIBRARIES})
++
++        if (CONDA_ROOT)
++            set(CUB_ROOT_DIR "${CONDA_ROOT}")
++        else()
++            get_third_party(cub)
++            set(CUB_ROOT_DIR "${CMAKE_CURRENT_BINARY_DIR}/cub")
++        endif()
++        find_package(CUB REQUIRED)
++        include_directories(${CUB_INCLUDE_DIR})
+     endif()
+-    set(CUDA_NVCC_FLAGS ${KALDI_CUDA_NVCC_FLAGS} ${CUDA_NVCC_FLAGS})
+-
+-    add_definitions(-DHAVE_CUDA=1)
+-    add_definitions(-DCUDA_API_PER_THREAD_DEFAULT_STREAM=1)
+-    include_directories(${CUDA_INCLUDE_DIRS})
+-    link_libraries(
+-        ${CUDA_LIBRARIES}
+-        ${CUDA_CUDA_LIBRARY}
+-        ${CUDA_CUBLAS_LIBRARIES}
+-        ${CUDA_CUFFT_LIBRARIES}
+-        ${CUDA_curand_LIBRARY}
+-        ${CUDA_cusolver_LIBRARY}
+-        ${CUDA_cusparse_LIBRARY})
+-
+-    find_package(NvToolExt REQUIRED)
+-    include_directories(${NvToolExt_INCLUDE_DIR})
+-    link_libraries(${NvToolExt_LIBRARIES})
+-
 -    get_third_party(cub)
 -    set(CUB_ROOT_DIR "${CMAKE_CURRENT_BINARY_DIR}/cub")
-+    if (CONDA_ROOT)
-+        set(CUB_ROOT_DIR "${CONDA_ROOT}")
-+    else()
-+        get_third_party(cub)
-+        set(CUB_ROOT_DIR "${CMAKE_CURRENT_BINARY_DIR}/cub")
-+    endif()
-     find_package(CUB REQUIRED)
-     include_directories(${CUB_INCLUDE_DIR})
+-    find_package(CUB REQUIRED)
+-    include_directories(${CUB_INCLUDE_DIR})
  endif()
  
  add_definitions(-DKALDI_NO_PORTAUDIO=1)
@@ -1707,7 +1764,7 @@ index c7f4582..62b30d5 100644
          unset(kaldi_exe_NAME)
          unset(kaldi_exe_SOURCES)
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index 4181dc4..f79f943 100644
+index 4181dc4..f79242e 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
 @@ -95,6 +95,20 @@ def get_exe_additional_depends(t):
@@ -1731,21 +1788,18 @@ index 4181dc4..f79f943 100644
          # solve fstbin
          "make-grammar-fst": ["decoder"],
  
-@@ -180,7 +194,12 @@ class CMakeListsHeaderLibrary(object):
-         ret.append("""
- install(TARGETS {tgt} EXPORT kaldi-targets)
- 
--install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
-+if (CONDA_ROOT)
-+    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir} COMPONENT kaldi)
-+
-+else()
-+    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
-+endif()
- """.format(tgt=self.target_name, dir=self.dir_name))
- 
-         return "\n".join(ret)
-@@ -276,6 +295,28 @@ class CMakeListsLibrary(object):
+@@ -234,8 +248,8 @@ class CMakeListsLibrary(object):
+         if len(self.cuda_source_list) > 0:
+             self.source_list.append("${CUDA_OBJS}")
+             ret.append("if(CUDA_FOUND)")
+-            ret.append("    cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)")
+-            ret.append("    cuda_compile(CUDA_OBJS")
++            #ret.append("    cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)")
++            ret.append("    set(CUDA_OBJS")
+             for f in self.cuda_source_list:
+                 ret.append("        " + f)
+             ret.append("    )")
+@@ -276,6 +290,28 @@ class CMakeListsLibrary(object):
              ret.append("endif()")
  
          ret.append("""
@@ -1768,22 +1822,21 @@ index 4181dc4..f79f943 100644
 +                DESTINATION ${{CMAKE_INSTALL_BINDIR}}
 +                COMPONENT kaldi
 +        )
-+    endif()
 +    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir} COMPONENT kaldi)
++    endif()
 +else() # Original functionality
  install(TARGETS {tgt}
      EXPORT kaldi-targets
      ARCHIVE DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
-@@ -283,7 +324,7 @@ install(TARGETS {tgt}
+@@ -283,6 +319,7 @@ install(TARGETS {tgt}
      RUNTIME DESTINATION ${{CMAKE_INSTALL_BINDIR}}
  )
  
--install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
 +endif()
+ install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
  """.format(tgt=self.target_name, dir=self.dir_name))
  
-         return "\n".join(ret)
-@@ -303,7 +344,10 @@ class CMakeListsExecutable(object):
+@@ -303,7 +340,10 @@ class CMakeListsExecutable(object):
      def gen_code(self):
          ret = []
          for exe_name, file_name, depend in self.list:
