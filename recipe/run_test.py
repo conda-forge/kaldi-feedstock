@@ -14,7 +14,7 @@ try:
     test_cuda = True
 except ValueError:
     test_cuda = False
-    
+
 if test_cuda:
     print("TESTING CUDA")
 else:

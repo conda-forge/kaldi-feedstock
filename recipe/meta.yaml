@@ -70,10 +70,6 @@ outputs:
         - liblapack * *openblas            # [not x86]
         - openblas             # [not x86]
         - openfst  # [not win and build_platform == target_platform]
-    test:
-      commands:
-        - python r  # [cuda_compiler_version != "None"]
-        - TEST_CUDA=0  # [cuda_compiler_version == "None"]
 
   {% set kaldi_cpu_gpu = "kaldi-cpu" %}   # [cuda_compiler_version == "None"]
   {% set kaldi_cpu_gpu = "kaldi-cuda" %}   # [cuda_compiler_version != "None"]
@@ -88,10 +84,6 @@ outputs:
     requirements:
       run:
         - {{ pin_subpackage("kaldi", exact=True) }}
-    test:
-      script_env:
-        - TEST_CUDA=1  # [cuda_compiler_version != "None"]
-        - TEST_CUDA=0  # [cuda_compiler_version == "None"]
 
 
 about:
