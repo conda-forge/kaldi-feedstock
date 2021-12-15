@@ -1,4 +1,4 @@
-From bea9d21d19fe2a0b915f64582a29d3c3898a2f77 Mon Sep 17 00:00:00 2001
+From c5e062c2601c220a10e83bab024430c8a0273ebf Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
@@ -8,9 +8,9 @@ Subject: [PATCH] Update CMake build
  cmake/FindBLAS.cmake            | 902 --------------------------------
  cmake/FindLAPACK.cmake          | 496 ------------------
  cmake/Utils.cmake               |   2 +-
- cmake/gen_cmake_skeleton.py     |  46 +-
+ cmake/gen_cmake_skeleton.py     |  64 ++-
  cmake/third_party/openfst.cmake |  79 ++-
- 6 files changed, 274 insertions(+), 1507 deletions(-)
+ 6 files changed, 283 insertions(+), 1516 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
@@ -1764,7 +1764,7 @@ index c7f4582..62b30d5 100644
          unset(kaldi_exe_NAME)
          unset(kaldi_exe_SOURCES)
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index 4181dc4..f79242e 100644
+index 4181dc4..9109aa5 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
 @@ -95,6 +95,20 @@ def get_exe_additional_depends(t):
@@ -1788,6 +1788,15 @@ index 4181dc4..f79242e 100644
          # solve fstbin
          "make-grammar-fst": ["decoder"],
  
+@@ -180,7 +194,7 @@ class CMakeListsHeaderLibrary(object):
+         ret.append("""
+ install(TARGETS {tgt} EXPORT kaldi-targets)
+ 
+-install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
++install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir} COMPONENT kaldi)
+ """.format(tgt=self.target_name, dir=self.dir_name))
+ 
+         return "\n".join(ret)
 @@ -234,8 +248,8 @@ class CMakeListsLibrary(object):
          if len(self.cuda_source_list) > 0:
              self.source_list.append("${CUDA_OBJS}")
@@ -1799,10 +1808,18 @@ index 4181dc4..f79242e 100644
              for f in self.cuda_source_list:
                  ret.append("        " + f)
              ret.append("    )")
-@@ -276,6 +290,28 @@ class CMakeListsLibrary(object):
+@@ -276,14 +290,37 @@ class CMakeListsLibrary(object):
              ret.append("endif()")
  
          ret.append("""
+-install(TARGETS {tgt}
+-    EXPORT kaldi-targets
+-    ARCHIVE DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
+-    LIBRARY DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
+-    RUNTIME DESTINATION ${{CMAKE_INSTALL_BINDIR}}
+-)
+-
+-install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
 +if(CONDA_ROOT)
 +    if(MSVC)
 +        install(TARGETS {tgt}
@@ -1825,17 +1842,18 @@ index 4181dc4..f79242e 100644
 +    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir} COMPONENT kaldi)
 +    endif()
 +else() # Original functionality
- install(TARGETS {tgt}
-     EXPORT kaldi-targets
-     ARCHIVE DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
-@@ -283,6 +319,7 @@ install(TARGETS {tgt}
-     RUNTIME DESTINATION ${{CMAKE_INSTALL_BINDIR}}
- )
- 
++    install(TARGETS {tgt}
++        EXPORT kaldi-targets
++        ARCHIVE DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
++        LIBRARY DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
++        RUNTIME DESTINATION ${{CMAKE_INSTALL_BINDIR}}
++    )
++    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
++
 +endif()
- install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
  """.format(tgt=self.target_name, dir=self.dir_name))
  
+         return "\n".join(ret)
 @@ -303,7 +340,10 @@ class CMakeListsExecutable(object):
      def gen_code(self):
          ret = []
