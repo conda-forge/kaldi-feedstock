@@ -7,19 +7,24 @@ lib_exts = {'darwin': '.dylib',
             'linux': '.so'
             }
 
-test_cuda = bool(int(os.environ.get('TEST_CUDA', 0)))
-cf_cuda_enabled = bool(int(os.environ.get('CF_CUDA_ENABLED', 0)))
-if test_cuda or cf_cuda_enabled:
+cuda_version = os.environ.get('cuda_compiler_version', None)
+
+try:
+    float(cuda_version)
     test_cuda = True
-    print("TESTING CUDA EXPORTS AS WELL")
+except ValueError:
+    test_cuda = False
+    
+if test_cuda:
+    print("TESTING CUDA")
 else:
-    print("TESTING CUDA NOT ENABLED")
+    print("CUDA NOT ENABLED FOR TESTING")
 
 def check_outputs(bins):
     for bin_name in bins.split():
         print(f'Testing {bin_name}')
         p = subprocess.run([bin_name, '--help'], capture_output=True, text=True)
-        if p.returncode == 1 and p.stderr and 'cuda' not in bin_name:
+        if p.returncode == 1 and ((p.stderr and 'cuda' not in bin_name) or test_cuda):
             print(f"{bin_name} had an error:")
             sys.exit(1)
 
