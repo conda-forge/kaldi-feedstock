@@ -1,4 +1,4 @@
-From b737341b75cf4d1c0a9c945f504e70fddbae968c Mon Sep 17 00:00:00 2001
+From a46d48a48de16766c1634478ac5f6c1ec769b050 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
@@ -8,9 +8,9 @@ Subject: [PATCH] Update CMake build
  cmake/FindBLAS.cmake            | 902 --------------------------------
  cmake/FindLAPACK.cmake          | 496 ------------------
  cmake/Utils.cmake               |   2 +-
- cmake/gen_cmake_skeleton.py     |  65 ++-
+ cmake/gen_cmake_skeleton.py     |  64 ++-
  cmake/third_party/openfst.cmake |  79 ++-
- 6 files changed, 284 insertions(+), 1516 deletions(-)
+ 6 files changed, 283 insertions(+), 1516 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
@@ -1764,7 +1764,7 @@ index c7f4582..62b30d5 100644
          unset(kaldi_exe_NAME)
          unset(kaldi_exe_SOURCES)
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index 4181dc4..1632e44 100644
+index 4181dc4..9f3e968 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
 @@ -95,6 +95,20 @@ def get_exe_additional_depends(t):
@@ -1808,7 +1808,7 @@ index 4181dc4..1632e44 100644
              for f in self.cuda_source_list:
                  ret.append("        " + f)
              ret.append("    )")
-@@ -276,14 +290,38 @@ class CMakeListsLibrary(object):
+@@ -276,14 +290,37 @@ class CMakeListsLibrary(object):
              ret.append("endif()")
  
          ret.append("""
@@ -1851,11 +1851,10 @@ index 4181dc4..1632e44 100644
 +    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
 +
 +endif()
-+install(FILES ${PUBLIC_HEADERS} DESTINATION include/kaldi/base)
  """.format(tgt=self.target_name, dir=self.dir_name))
  
          return "\n".join(ret)
-@@ -303,7 +341,10 @@ class CMakeListsExecutable(object):
+@@ -303,7 +340,10 @@ class CMakeListsExecutable(object):
      def gen_code(self):
          ret = []
          for exe_name, file_name, depend in self.list:
@@ -1956,5 +1955,5 @@ index edb4314..a6fbad3 100644
 +    endif() 
  endif()
 -- 
-2.33.0
+2.34.1
 
