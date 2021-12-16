@@ -1,21 +1,21 @@
-From 520042bac834464ce7fd3d89d2187d94ef910609 Mon Sep 17 00:00:00 2001
+From 8a9e500a62cf295d3d6ea829ae8170295af42faa Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
 
 ---
- CMakeLists.txt                  | 302 +++++++----
+ CMakeLists.txt                  | 303 +++++++----
  cmake/FindBLAS.cmake            | 902 --------------------------------
  cmake/FindLAPACK.cmake          | 496 ------------------
  cmake/Utils.cmake               |   2 +-
  cmake/gen_cmake_skeleton.py     |  64 ++-
  cmake/third_party/openfst.cmake |  79 ++-
- 6 files changed, 329 insertions(+), 1516 deletions(-)
+ 6 files changed, 330 insertions(+), 1516 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..05dc656 100644
+index 8b2de3a..d533452 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -170,7 +170,7 @@ index 8b2de3a..05dc656 100644
  endif()
  
  if(MSVC)
-@@ -125,51 +173,104 @@ if(MSVC)
+@@ -125,51 +173,105 @@ if(MSVC)
      endif()
  endif()
  
@@ -188,6 +188,7 @@ index 8b2de3a..05dc656 100644
 +
 +    find_package(CUDA)
 +    if (CUDA_FOUND)
++        set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 +        message(STATUS "Found CUDA ${CMAKE_CUDA_COMPILER_VERSION} at ${CMAKE_CUDA_COMPILER}")
 +
 +        find_package(CUDAToolkit REQUIRED)
@@ -314,7 +315,7 @@ index 8b2de3a..05dc656 100644
  endif()
  
  # get_third_party(openfst)
-@@ -208,8 +309,10 @@ add_subdirectory(src/nnet3)
+@@ -208,8 +310,10 @@ add_subdirectory(src/nnet3)
  add_subdirectory(src/rnnlm)
  add_subdirectory(src/chain)
  add_subdirectory(src/ivector)
@@ -327,7 +328,7 @@ index 8b2de3a..05dc656 100644
  add_subdirectory(src/kws)
  
  add_subdirectory(src/itf)
-@@ -228,6 +331,7 @@ endif()
+@@ -228,6 +332,7 @@ endif()
  # add all native executables
  add_subdirectory(src/bin)
  add_subdirectory(src/gmmbin)
@@ -335,7 +336,7 @@ index 8b2de3a..05dc656 100644
  add_subdirectory(src/featbin)
  add_subdirectory(src/sgmm2bin)
  add_subdirectory(src/fstbin)
-@@ -239,8 +343,10 @@ add_subdirectory(src/nnet3bin)
+@@ -239,8 +344,10 @@ add_subdirectory(src/nnet3bin)
  add_subdirectory(src/rnnlmbin)
  add_subdirectory(src/chainbin)
  add_subdirectory(src/ivectorbin)
@@ -348,7 +349,7 @@ index 8b2de3a..05dc656 100644
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables
-@@ -249,19 +355,21 @@ if(CUDA_FOUND)
+@@ -249,19 +356,21 @@ if(CUDA_FOUND)
      add_subdirectory(src/cudadecoderbin)
  endif()
  
