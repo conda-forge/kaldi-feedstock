@@ -1,21 +1,21 @@
-From 0ab3bd2a148fab76b1cfb8faebaea7902d7094e0 Mon Sep 17 00:00:00 2001
+From 74e52e01ebcf558bc54433f4f862b32a228e6df9 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
 
 ---
- CMakeLists.txt                  | 296 +++++++----
+ CMakeLists.txt                  | 300 +++++++----
  cmake/FindBLAS.cmake            | 902 --------------------------------
  cmake/FindLAPACK.cmake          | 496 ------------------
  cmake/Utils.cmake               |   2 +-
  cmake/gen_cmake_skeleton.py     |  64 ++-
  cmake/third_party/openfst.cmake |  79 ++-
- 6 files changed, 323 insertions(+), 1516 deletions(-)
+ 6 files changed, 327 insertions(+), 1516 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..72046cf 100644
+index 8b2de3a..9c936c2 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -24,7 +24,7 @@ index 8b2de3a..72046cf 100644
  project(kaldi)
  
  if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-@@ -8,6 +8,26 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+@@ -8,6 +8,30 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
  include(GNUInstallDirs)
  include(Utils)
  
@@ -44,14 +44,18 @@ index 8b2de3a..72046cf 100644
 +    include_directories("${CONDA_ROOT}/include")
 +    include(CheckLanguage)
 +    check_language(CUDA)
-+    enable_language(CUDA)
++    if(CMAKE_CUDA_COMPILER)
++      enable_language(CUDA)
++    else()
++      message(STATUS "No CUDA support")
++    endif()
 +    
 +endif()
 +
  include(third_party/get_third_party)
  
  include(cmake/third_party/openfst.cmake)
-@@ -38,7 +58,7 @@ if(BUILD_SHARED_LIBS)
+@@ -38,7 +62,7 @@ if(BUILD_SHARED_LIBS)
      set(CMAKE_POSITION_INDEPENDENT_CODE ON)
      if(WIN32)
          set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -60,7 +64,7 @@ index 8b2de3a..72046cf 100644
      elseif(APPLE)
          set(CMAKE_INSTALL_RPATH "@loader_path")
      else()
-@@ -66,45 +86,67 @@ link_libraries(${CMAKE_DL_LIBS})
+@@ -66,45 +90,67 @@ link_libraries(${CMAKE_DL_LIBS})
  find_package(Threads)
  link_libraries(Threads::Threads)
  
@@ -85,7 +89,8 @@ index 8b2de3a..72046cf 100644
 +        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
      else()
 -        message(STATUS "Finding MKL from \"$ENV{MKLROOT}\"")
--    endif()
++        message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
+     endif()
 -    normalize_env_path(ENV{MKLROOT})
 -    set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
 -    find_package(LAPACK REQUIRED)
@@ -105,8 +110,7 @@ index 8b2de3a..72046cf 100644
 -            " Apple.  Unexplained crashes with reports of NaNs will"
 -            " be caused by this bug, but some recipes will (sometimes) work."
 -        )
-+        message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
-     endif()
+-    endif()
 -    set(BLA_VENDOR "Apple")
 -    find_package(BLAS REQUIRED)
 -    find_package(LAPACK REQUIRED)
@@ -164,7 +168,7 @@ index 8b2de3a..72046cf 100644
  endif()
  
  if(MSVC)
-@@ -125,51 +167,104 @@ if(MSVC)
+@@ -125,51 +171,104 @@ if(MSVC)
      endif()
  endif()
  
@@ -308,7 +312,7 @@ index 8b2de3a..72046cf 100644
  endif()
  
  # get_third_party(openfst)
-@@ -208,8 +303,10 @@ add_subdirectory(src/nnet3)
+@@ -208,8 +307,10 @@ add_subdirectory(src/nnet3)
  add_subdirectory(src/rnnlm)
  add_subdirectory(src/chain)
  add_subdirectory(src/ivector)
@@ -321,7 +325,7 @@ index 8b2de3a..72046cf 100644
  add_subdirectory(src/kws)
  
  add_subdirectory(src/itf)
-@@ -228,6 +325,7 @@ endif()
+@@ -228,6 +329,7 @@ endif()
  # add all native executables
  add_subdirectory(src/bin)
  add_subdirectory(src/gmmbin)
@@ -329,7 +333,7 @@ index 8b2de3a..72046cf 100644
  add_subdirectory(src/featbin)
  add_subdirectory(src/sgmm2bin)
  add_subdirectory(src/fstbin)
-@@ -239,8 +337,10 @@ add_subdirectory(src/nnet3bin)
+@@ -239,8 +341,10 @@ add_subdirectory(src/nnet3bin)
  add_subdirectory(src/rnnlmbin)
  add_subdirectory(src/chainbin)
  add_subdirectory(src/ivectorbin)
@@ -342,7 +346,7 @@ index 8b2de3a..72046cf 100644
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables
-@@ -249,19 +349,21 @@ if(CUDA_FOUND)
+@@ -249,19 +353,21 @@ if(CUDA_FOUND)
      add_subdirectory(src/cudadecoderbin)
  endif()
  
