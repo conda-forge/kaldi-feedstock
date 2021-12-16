@@ -1,4 +1,4 @@
-From 8a9e500a62cf295d3d6ea829ae8170295af42faa Mon Sep 17 00:00:00 2001
+From a9b3e170cacddded350a1bc44458d8f5a46c816b Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
@@ -1811,7 +1811,7 @@ index c7f4582..62b30d5 100644
          unset(kaldi_exe_NAME)
          unset(kaldi_exe_SOURCES)
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index 4181dc4..9109aa5 100644
+index 4181dc4..9f3e968 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
 @@ -95,6 +95,20 @@ def get_exe_additional_depends(t):
@@ -1886,8 +1886,8 @@ index 4181dc4..9109aa5 100644
 +                DESTINATION ${{CMAKE_INSTALL_BINDIR}}
 +                COMPONENT kaldi
 +        )
-+    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir} COMPONENT kaldi)
 +    endif()
++    install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir} COMPONENT kaldi)
 +else() # Original functionality
 +    install(TARGETS {tgt}
 +        EXPORT kaldi-targets
