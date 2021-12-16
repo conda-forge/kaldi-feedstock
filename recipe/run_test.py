@@ -22,10 +22,12 @@ else:
 
 def check_outputs(bins):
     for bin_name in bins.split():
+        if 'cuda' in bin_name and not test_cuda:
+            print(f'Skipping {bin_name}, not testing cuda')
         print(f'Testing {bin_name}')
         p = subprocess.run([bin_name, '--help'], capture_output=True, text=True)
-        if p.returncode == 1 and ((p.stderr and 'cuda' not in bin_name) or test_cuda):
-            print(f"{bin_name} had an error:")
+        if p.returncode == 1 and p.stderr:
+            print(f"{bin_name} had an error: {p.stderr}")
             sys.exit(1)
 
 def check_headers(key, header_files):

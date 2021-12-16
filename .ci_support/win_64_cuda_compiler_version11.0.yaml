@@ -1,0 +1,23 @@
+channel_sources:
+- conda-forge
+channel_targets:
+- conda-forge main
+cuda_compiler:
+- nvcc
+cuda_compiler_version:
+- '11.0'
+cxx_compiler:
+- vs2019
+icu:
+- '69'
+mkl:
+- '2021'
+mkl_devel:
+- '2021'
+pin_run_as_build:
+  zlib:
+    max_pin: x.x
+target_platform:
+- win-64
+zlib:
+- '1.2'
