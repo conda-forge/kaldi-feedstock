@@ -24,6 +24,7 @@ def check_outputs(bins):
     for bin_name in bins.split():
         if 'cuda' in bin_name and not test_cuda:
             print(f'Skipping {bin_name}, not testing cuda')
+            continue
         print(f'Testing {bin_name}')
         p = subprocess.run([bin_name, '--help'], capture_output=True, text=True)
         if p.returncode == 1 and p.stderr:
