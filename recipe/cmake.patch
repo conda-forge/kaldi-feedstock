@@ -1,4 +1,4 @@
-From a9b3e170cacddded350a1bc44458d8f5a46c816b Mon Sep 17 00:00:00 2001
+From 4e34c56c389717a641a46868620773a31e6925f7 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
@@ -8,9 +8,9 @@ Subject: [PATCH] Update CMake build
  cmake/FindBLAS.cmake            | 902 --------------------------------
  cmake/FindLAPACK.cmake          | 496 ------------------
  cmake/Utils.cmake               |   2 +-
- cmake/gen_cmake_skeleton.py     |  64 ++-
+ cmake/gen_cmake_skeleton.py     |  60 ++-
  cmake/third_party/openfst.cmake |  79 ++-
- 6 files changed, 330 insertions(+), 1516 deletions(-)
+ 6 files changed, 328 insertions(+), 1514 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
@@ -1811,7 +1811,7 @@ index c7f4582..62b30d5 100644
          unset(kaldi_exe_NAME)
          unset(kaldi_exe_SOURCES)
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index 4181dc4..9f3e968 100644
+index 4181dc4..dda8efb 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
 @@ -95,6 +95,20 @@ def get_exe_additional_depends(t):
@@ -1844,17 +1844,6 @@ index 4181dc4..9f3e968 100644
  """.format(tgt=self.target_name, dir=self.dir_name))
  
          return "\n".join(ret)
-@@ -234,8 +248,8 @@ class CMakeListsLibrary(object):
-         if len(self.cuda_source_list) > 0:
-             self.source_list.append("${CUDA_OBJS}")
-             ret.append("if(CUDA_FOUND)")
--            ret.append("    cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)")
--            ret.append("    cuda_compile(CUDA_OBJS")
-+            #ret.append("    cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)")
-+            ret.append("    set(CUDA_OBJS")
-             for f in self.cuda_source_list:
-                 ret.append("        " + f)
-             ret.append("    )")
 @@ -276,14 +290,37 @@ class CMakeListsLibrary(object):
              ret.append("endif()")
  
