@@ -1,21 +1,21 @@
-From 74e52e01ebcf558bc54433f4f862b32a228e6df9 Mon Sep 17 00:00:00 2001
+From 520042bac834464ce7fd3d89d2187d94ef910609 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
 
 ---
- CMakeLists.txt                  | 300 +++++++----
+ CMakeLists.txt                  | 302 +++++++----
  cmake/FindBLAS.cmake            | 902 --------------------------------
  cmake/FindLAPACK.cmake          | 496 ------------------
  cmake/Utils.cmake               |   2 +-
  cmake/gen_cmake_skeleton.py     |  64 ++-
  cmake/third_party/openfst.cmake |  79 ++-
- 6 files changed, 327 insertions(+), 1516 deletions(-)
+ 6 files changed, 329 insertions(+), 1516 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..9c936c2 100644
+index 8b2de3a..05dc656 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -64,7 +64,7 @@ index 8b2de3a..9c936c2 100644
      elseif(APPLE)
          set(CMAKE_INSTALL_RPATH "@loader_path")
      else()
-@@ -66,45 +90,67 @@ link_libraries(${CMAKE_DL_LIBS})
+@@ -66,45 +90,69 @@ link_libraries(${CMAKE_DL_LIBS})
  find_package(Threads)
  link_libraries(Threads::Threads)
  
@@ -85,6 +85,8 @@ index 8b2de3a..9c936c2 100644
 +        add_definitions(-DHAVE_MKL=1)
 +    elseif(MATHLIB STREQUAL "OpenBLAS")
 +        set(BLA_VENDOR "OpenBLAS") 
++        find_package(BLAS REQUIRED)
++        find_package(LAPACK REQUIRED)
 +        add_definitions(-DHAVE_CLAPACK=1)
 +        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
      else()
@@ -168,7 +170,7 @@ index 8b2de3a..9c936c2 100644
  endif()
  
  if(MSVC)
-@@ -125,51 +171,104 @@ if(MSVC)
+@@ -125,51 +173,104 @@ if(MSVC)
      endif()
  endif()
  
@@ -312,7 +314,7 @@ index 8b2de3a..9c936c2 100644
  endif()
  
  # get_third_party(openfst)
-@@ -208,8 +307,10 @@ add_subdirectory(src/nnet3)
+@@ -208,8 +309,10 @@ add_subdirectory(src/nnet3)
  add_subdirectory(src/rnnlm)
  add_subdirectory(src/chain)
  add_subdirectory(src/ivector)
@@ -325,7 +327,7 @@ index 8b2de3a..9c936c2 100644
  add_subdirectory(src/kws)
  
  add_subdirectory(src/itf)
-@@ -228,6 +329,7 @@ endif()
+@@ -228,6 +331,7 @@ endif()
  # add all native executables
  add_subdirectory(src/bin)
  add_subdirectory(src/gmmbin)
@@ -333,7 +335,7 @@ index 8b2de3a..9c936c2 100644
  add_subdirectory(src/featbin)
  add_subdirectory(src/sgmm2bin)
  add_subdirectory(src/fstbin)
-@@ -239,8 +341,10 @@ add_subdirectory(src/nnet3bin)
+@@ -239,8 +343,10 @@ add_subdirectory(src/nnet3bin)
  add_subdirectory(src/rnnlmbin)
  add_subdirectory(src/chainbin)
  add_subdirectory(src/ivectorbin)
@@ -346,7 +348,7 @@ index 8b2de3a..9c936c2 100644
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables
-@@ -249,19 +353,21 @@ if(CUDA_FOUND)
+@@ -249,19 +355,21 @@ if(CUDA_FOUND)
      add_subdirectory(src/cudadecoderbin)
  endif()
  
