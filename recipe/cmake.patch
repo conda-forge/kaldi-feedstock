@@ -1,10 +1,10 @@
-From 0d66823c5684e1209b1477002566a572afdb61bf Mon Sep 17 00:00:00 2001
+From 206b11123e73182b6e33380413221a82d6e6e449 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
 
 ---
- CMakeLists.txt                                | 320 +++++--
+ CMakeLists.txt                                | 321 +++++--
  cmake/FindBLAS.cmake                          | 902 ------------------
  cmake/FindLAPACK.cmake                        | 496 ----------
  cmake/Utils.cmake                             |   2 +-
@@ -12,12 +12,12 @@ Subject: [PATCH] Update CMake build
  cmake/third_party/openfst.cmake               |  88 +-
  ...hed-threaded-nnet3-cuda-online-pipeline.cc |  17 +
  src/cudafeat/feature-online-cmvn-cuda.cu      |   4 +-
- 8 files changed, 383 insertions(+), 1517 deletions(-)
+ 8 files changed, 384 insertions(+), 1517 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..3745fdb 100644
+index 8b2de3a..58b78fd 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -198,7 +198,7 @@ index 8b2de3a..3745fdb 100644
      if(NOT DEFINED ENV{CUDAHOSTCXX})
          set(ENV{CUDAHOSTCXX} ${CMAKE_CXX_COMPILER})
      endif()
-@@ -125,51 +181,112 @@ if(MSVC)
+@@ -125,51 +181,113 @@ if(MSVC)
      endif()
  endif()
  
@@ -222,6 +222,7 @@ index 8b2de3a..3745fdb 100644
 +        if(MSVC)
 +            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /permissive-,/FS,/wd4819,/EHsc,/bigobj")
 +            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /wd4018,/wd4244,/wd4267,/wd4291,/wd4305")
++            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -std=c++${CMAKE_CXX_STANDARD}")
 +            if(BUILD_SHARED_LIBS)
 +                list(APPEND CUDA_NVCC_FLAGS_RELEASE -Xcompiler /MD)
 +                list(APPEND CUDA_NVCC_FLAGS_DEBUG -Xcompiler /MDd)
@@ -350,7 +351,7 @@ index 8b2de3a..3745fdb 100644
  endif()
  
  # get_third_party(openfst)
-@@ -208,7 +325,9 @@ add_subdirectory(src/nnet3)
+@@ -208,7 +326,9 @@ add_subdirectory(src/nnet3)
  add_subdirectory(src/rnnlm)
  add_subdirectory(src/chain)
  add_subdirectory(src/ivector)
@@ -361,7 +362,7 @@ index 8b2de3a..3745fdb 100644
  add_subdirectory(src/online2)
  add_subdirectory(src/kws)
  
-@@ -228,6 +347,7 @@ endif()
+@@ -228,6 +348,7 @@ endif()
  # add all native executables
  add_subdirectory(src/bin)
  add_subdirectory(src/gmmbin)
@@ -369,7 +370,7 @@ index 8b2de3a..3745fdb 100644
  add_subdirectory(src/featbin)
  add_subdirectory(src/sgmm2bin)
  add_subdirectory(src/fstbin)
-@@ -239,8 +359,10 @@ add_subdirectory(src/nnet3bin)
+@@ -239,8 +360,10 @@ add_subdirectory(src/nnet3bin)
  add_subdirectory(src/rnnlmbin)
  add_subdirectory(src/chainbin)
  add_subdirectory(src/ivectorbin)
@@ -382,7 +383,7 @@ index 8b2de3a..3745fdb 100644
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables
-@@ -249,19 +371,21 @@ if(CUDA_FOUND)
+@@ -249,19 +372,21 @@ if(CUDA_FOUND)
      add_subdirectory(src/cudadecoderbin)
  endif()
  

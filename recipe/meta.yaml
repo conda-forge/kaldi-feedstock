@@ -90,9 +90,9 @@ outputs:
       #   - libkaldi.lib
       #   - include/kaldi/io-funcs.h
       - lib/libkaldi*{{ SHLIB_EXT }}   # [not win]
-      - bin/*   # [not win]
-      - lib/libkaldi}.so.*               # [linux]
+      - lib/libkaldi.so.*               # [linux]
       - lib/libkaldi.*.dylib            # [osx]
+      - bin/*   # [not win]
       - Library/bin/*           # [win]
 
   - name: {{ kaldi_cpu_gpu }}-dev
@@ -108,9 +108,10 @@ outputs:
         - {{ pin_subpackage("kaldi-cpu", exact=True) }}  # [cuda_compiler_version == "None"]
         - {{ pin_subpackage("kaldi-cuda", exact=True) }}  # [cuda_compiler_version != "None"]
     files:
-      - include/kaldi/*.h
-      - include/fst/*.h  # [win]
-      - lib/libkaldi*.lib  # [win]
+      - include/kaldi/*/*.h  # [not win]
+      - Library/include/kaldi/*/*.h  # [win]
+      - Library/include/fst/*.h  # [win]
+      - Library/lib/libkaldi*.lib  # [win]
     test:
       commands:
         - test -f ${PREFIX}/include/kaldi/io-funcs.h  # [not win]
