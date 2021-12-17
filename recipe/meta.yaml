@@ -81,6 +81,41 @@ outputs:
     requirements:
       run:
         - {{ pin_subpackage("kaldi", exact=True) }}
+    files:
+      # Include files like
+      #   - libopenblasp-r0.3.5.so
+      #   - libopenblas_vortexp-r0.3.5.so
+      #   - libopenblas.so.0
+      # Avoid files
+      #   - libkaldi.lib
+      #   - include/kaldi/io-funcs.h
+      - lib/libkaldi*{{ SHLIB_EXT }}   # [not win]
+      - bin/*   # [not win]
+      - lib/libkaldi}.so.*               # [linux]
+      - lib/libkaldi.*.dylib            # [osx]
+      - Library/bin/*           # [win]
+
+  - name: {{ kaldi_cpu_gpu }}-dev
+    build:
+      string: cuda{{ cuda_compiler_version | replace('.', '') }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
+      string: cpu_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [cuda_compiler_version == "None"]
+      detect_binary_files_with_prefix: False
+      # weigh down cpu implementation and give cuda preference
+      track_features:
+        - {{ kaldi_cpu_gpu }}
+    requirements:
+      run:
+        - {{ pin_subpackage("kaldi-cpu", exact=True) }}  # [cuda_compiler_version == "None"]
+        - {{ pin_subpackage("kaldi-cuda", exact=True) }}  # [cuda_compiler_version != "None"]
+    files:
+      - include/kaldi/*.h
+      - include/fst/*.h  # [win]
+      - lib/libkaldi*.lib  # [win]
+    test:
+      commands:
+        - test -f ${PREFIX}/include/kaldi/io-funcs.h  # [not win]
+        - if not exist %PREFIX%\\Library\\lib\\fst.lib exit 1  # [win]
+        - if not exist %PREFIX%\\Library\\lib\\kaldi-base.lib exit 1  # [win]
 
 
 about:

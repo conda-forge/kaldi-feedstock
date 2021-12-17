@@ -1,21 +1,23 @@
-From 4e34c56c389717a641a46868620773a31e6925f7 Mon Sep 17 00:00:00 2001
+From 0d66823c5684e1209b1477002566a572afdb61bf Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
 
 ---
- CMakeLists.txt                  | 303 +++++++----
- cmake/FindBLAS.cmake            | 902 --------------------------------
- cmake/FindLAPACK.cmake          | 496 ------------------
- cmake/Utils.cmake               |   2 +-
- cmake/gen_cmake_skeleton.py     |  60 ++-
- cmake/third_party/openfst.cmake |  79 ++-
- 6 files changed, 328 insertions(+), 1514 deletions(-)
+ CMakeLists.txt                                | 320 +++++--
+ cmake/FindBLAS.cmake                          | 902 ------------------
+ cmake/FindLAPACK.cmake                        | 496 ----------
+ cmake/Utils.cmake                             |   2 +-
+ cmake/gen_cmake_skeleton.py                   |  71 +-
+ cmake/third_party/openfst.cmake               |  88 +-
+ ...hed-threaded-nnet3-cuda-online-pipeline.cc |  17 +
+ src/cudafeat/feature-online-cmvn-cuda.cu      |   4 +-
+ 8 files changed, 383 insertions(+), 1517 deletions(-)
  delete mode 100644 cmake/FindBLAS.cmake
  delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..d533452 100644
+index 8b2de3a..3745fdb 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -24,7 +26,7 @@ index 8b2de3a..d533452 100644
  project(kaldi)
  
  if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-@@ -8,6 +8,30 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+@@ -8,6 +8,22 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
  include(GNUInstallDirs)
  include(Utils)
  
@@ -32,30 +34,22 @@ index 8b2de3a..d533452 100644
 +
 +    message(STATUS "Adding ${CONDA_ROOT} directories")
 +    if (MSVC)
-+        set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib;${CMAKE_LIBRARY_PATH}")
++        set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib")
 +        link_directories("${CONDA_ROOT}/bin")
 +        link_directories("${CONDA_ROOT}/lib")
 +    else()
-+        set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib;${CMAKE_LIBRARY_PATH}")
++        set(CMAKE_LIBRARY_PATH "${CONDA_ROOT}/lib")
 +        link_directories("${CONDA_ROOT}/lib")
 +
 +    endif()
-+    set(CMAKE_PREFIX_PATH "${CONDA_ROOT};${CMAKE_PREFIX_PATH}")
++    set(CMAKE_PREFIX_PATH "${CONDA_ROOT}")
 +    include_directories("${CONDA_ROOT}/include")
-+    include(CheckLanguage)
-+    check_language(CUDA)
-+    if(CMAKE_CUDA_COMPILER)
-+      enable_language(CUDA)
-+    else()
-+      message(STATUS "No CUDA support")
-+    endif()
-+    
 +endif()
 +
  include(third_party/get_third_party)
  
  include(cmake/third_party/openfst.cmake)
-@@ -38,7 +62,7 @@ if(BUILD_SHARED_LIBS)
+@@ -38,11 +54,15 @@ if(BUILD_SHARED_LIBS)
      set(CMAKE_POSITION_INDEPENDENT_CODE ON)
      if(WIN32)
          set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -64,7 +58,16 @@ index 8b2de3a..d533452 100644
      elseif(APPLE)
          set(CMAKE_INSTALL_RPATH "@loader_path")
      else()
-@@ -66,45 +90,69 @@ link_libraries(${CMAKE_DL_LIBS})
+-        set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib;$ORIGIN/../../tools/openfst/lib")
++        if(CONDA_ROOT)
++            set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib")
++        else()
++            set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib;$ORIGIN/../../tools/openfst/lib")
++        endif()
+     endif()
+ endif()
+ 
+@@ -66,57 +86,93 @@ link_libraries(${CMAKE_DL_LIBS})
  find_package(Threads)
  link_libraries(Threads::Threads)
  
@@ -78,6 +81,7 @@ index 8b2de3a..d533452 100644
 -    if(NOT DEFINED ENV{MKLROOT} OR "$ENV{MKLROOT}" STREQUAL "")
 -        message(FATAL_ERROR "Environment variable MKLROOT is not defined")
 +if(CONDA_ROOT)
++    message(STATUS "Looking for ${MATHLIB} libraries")
 +    if(MATHLIB STREQUAL "MKL")
 +        set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
 +        find_package(BLAS REQUIRED)
@@ -91,8 +95,7 @@ index 8b2de3a..d533452 100644
 +        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tools/CLAPACK)
      else()
 -        message(STATUS "Finding MKL from \"$ENV{MKLROOT}\"")
-+        message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
-     endif()
+-    endif()
 -    normalize_env_path(ENV{MKLROOT})
 -    set(BLA_VENDOR "Intel10_64lp_seq") # use the single threaded MKL by default
 -    find_package(LAPACK REQUIRED)
@@ -112,7 +115,8 @@ index 8b2de3a..d533452 100644
 -            " Apple.  Unexplained crashes with reports of NaNs will"
 -            " be caused by this bug, but some recipes will (sometimes) work."
 -        )
--    endif()
++        message(FATAL_ERROR "${MATHLIB} is not tested and supported, you are on your own now.")
+     endif()
 -    set(BLA_VENDOR "Apple")
 -    find_package(BLAS REQUIRED)
 -    find_package(LAPACK REQUIRED)
@@ -170,7 +174,31 @@ index 8b2de3a..d533452 100644
  endif()
  
  if(MSVC)
-@@ -125,51 +173,105 @@ if(MSVC)
+     # Added in source, but we actually should do it in build script, whatever...
+     # add_definitions(-DWIN32_LEAN_AND_MEAN=1)
+-
++        
+     add_compile_options(/permissive- /FS /wd4819 /EHsc /bigobj)
+ 
+     # some warnings related with fst
+     add_compile_options(/wd4018 /wd4244 /wd4267 /wd4291 /wd4305)
+ 
+     set(CUDA_USE_STATIC_CUDA_RUNTIME OFF CACHE INTERNAL "")
++    set(CompilerFlags
++        CMAKE_CXX_FLAGS
++        CMAKE_CXX_FLAGS_DEBUG
++        CMAKE_CXX_FLAGS_RELEASE
++        CMAKE_C_FLAGS
++        CMAKE_C_FLAGS_DEBUG
++        CMAKE_C_FLAGS_RELEASE
++        )
++foreach(CompilerFlag ${CompilerFlags})
++  string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
++endforeach()
+     if(NOT DEFINED ENV{CUDAHOSTCXX})
+         set(ENV{CUDAHOSTCXX} ${CMAKE_CXX_COMPILER})
+     endif()
+@@ -125,51 +181,112 @@ if(MSVC)
      endif()
  endif()
  
@@ -185,34 +213,35 @@ index 8b2de3a..d533452 100644
 -            list(APPEND CUDA_NVCC_FLAGS_RELEASE -Xcompiler /MD)
 -            list(APPEND CUDA_NVCC_FLAGS_DEBUG -Xcompiler /MDd)
 +if (CONDA_ROOT)
-+
 +    find_package(CUDA)
 +    if (CUDA_FOUND)
-+        set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
-+        message(STATUS "Found CUDA ${CMAKE_CUDA_COMPILER_VERSION} at ${CMAKE_CUDA_COMPILER}")
-+
-+        find_package(CUDAToolkit REQUIRED)
-+        link_libraries(CUDA::toolkit)
-+        #set(CUB_ROOT_DIR "${CONDA_ROOT}")
-+        find_package(CUB REQUIRED)
-+        find_package(NvToolExt REQUIRED)
++        set(CUDA_VERBOSE_BUILD ON)
 +        set(CUDA_PROPAGATE_HOST_FLAGS ON)
-+        set(CMAKE_CUDA_STANDARD "${CMAKE_CXX_STANDARD}")
-+        set(CMAKE_CUDA_FLAGS "--default-stream=per-thread")
++        message(STATUS "${CMAKE_CXX_FLAGS_RELEASE}")
++        set(KALDI_CUDA_NVCC_FLAGS "--default-stream=per-thread;-std=c++${CMAKE_CXX_STANDARD}")
 +        if(MSVC)
-+            set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler /permissive-,/FS,/wd4819,/EHsc,/bigobj")
-+            set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler /wd4018,/wd4244,/wd4267,/wd4291,/wd4305")
++            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /permissive-,/FS,/wd4819,/EHsc,/bigobj")
++            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /wd4018,/wd4244,/wd4267,/wd4291,/wd4305")
 +            if(BUILD_SHARED_LIBS)
-+                set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS} -Xcompiler /MD")
-+                set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS} -Xcompiler /MDd")
++                list(APPEND CUDA_NVCC_FLAGS_RELEASE -Xcompiler /MD)
++                list(APPEND CUDA_NVCC_FLAGS_DEBUG -Xcompiler /MDd)
++            else()
++                list(APPEND CUDA_NVCC_FLAGS_RELEASE -Xcompiler /MD)
++                list(APPEND CUDA_NVCC_FLAGS_DEBUG -Xcompiler /MDd)
++
 +            endif()
 +        else()
-+            #     list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -std=c++${CMAKE_CXX_STANDARD}")
-+            set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -fPIC")
++        #     list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -std=c++${CMAKE_CXX_STANDARD}")
++            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -fPIC")
          endif()
 -    else()
 -    #     list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -std=c++${CMAKE_CXX_STANDARD}")
 -        list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -fPIC")
++        set(CUDA_NVCC_FLAGS ${KALDI_CUDA_NVCC_FLAGS} ${CUDA_NVCC_FLAGS})
++
++        add_definitions(-DHAVE_CUDA=1)
++        add_definitions(-DCUDA_API_PER_THREAD_DEFAULT_STREAM=1)
++        #include_directories(${CUDA_INCLUDE_DIRS})
 +        link_libraries(
 +            ${CUDA_LIBRARIES}
 +            ${CUDA_CUDA_LIBRARY}
@@ -221,16 +250,22 @@ index 8b2de3a..d533452 100644
 +            ${CUDA_curand_LIBRARY}
 +            ${CUDA_cusolver_LIBRARY}
 +            ${CUDA_cusparse_LIBRARY})
-+        include_directories(${CUB_INCLUDE_DIR})
++
++        find_package(NvToolExt REQUIRED)
 +        include_directories(${NvToolExt_INCLUDE_DIR})
 +        link_libraries(${NvToolExt_LIBRARIES})
 +
-+        add_definitions(-DHAVE_CUDA=1)
-+        add_definitions(-DCUDA_API_PER_THREAD_DEFAULT_STREAM=1)
++        if (CONDA_ROOT)
++            set(CUB_ROOT_DIR "${CONDA_ROOT}")
++        else()
++            get_third_party(cub)
++            set(CUB_ROOT_DIR "${CMAKE_CURRENT_BINARY_DIR}/cub")
++        endif()
++        find_package(CUB REQUIRED)
++        include_directories(${CUB_INCLUDE_DIR})
 +
 +    endif()
 +else()
-+    find_package(CUDA)
 +    if(CUDA_FOUND)
 +        set(CUDA_PROPAGATE_HOST_FLAGS ON)
 +        set(KALDI_CUDA_NVCC_FLAGS "--default-stream=per-thread;-std=c++${CMAKE_CXX_STANDARD}")
@@ -315,20 +350,18 @@ index 8b2de3a..d533452 100644
  endif()
  
  # get_third_party(openfst)
-@@ -208,8 +310,10 @@ add_subdirectory(src/nnet3)
+@@ -208,7 +325,9 @@ add_subdirectory(src/nnet3)
  add_subdirectory(src/rnnlm)
  add_subdirectory(src/chain)
  add_subdirectory(src/ivector)
 -add_subdirectory(src/online)
--add_subdirectory(src/online2)
 +if(NOT MSVC)
 +    add_subdirectory(src/online)
-+    add_subdirectory(src/online2)
 +endif()
+ add_subdirectory(src/online2)
  add_subdirectory(src/kws)
  
- add_subdirectory(src/itf)
-@@ -228,6 +332,7 @@ endif()
+@@ -228,6 +347,7 @@ endif()
  # add all native executables
  add_subdirectory(src/bin)
  add_subdirectory(src/gmmbin)
@@ -336,7 +369,7 @@ index 8b2de3a..d533452 100644
  add_subdirectory(src/featbin)
  add_subdirectory(src/sgmm2bin)
  add_subdirectory(src/fstbin)
-@@ -239,8 +344,10 @@ add_subdirectory(src/nnet3bin)
+@@ -239,8 +359,10 @@ add_subdirectory(src/nnet3bin)
  add_subdirectory(src/rnnlmbin)
  add_subdirectory(src/chainbin)
  add_subdirectory(src/ivectorbin)
@@ -349,7 +382,7 @@ index 8b2de3a..d533452 100644
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables
-@@ -249,19 +356,21 @@ if(CUDA_FOUND)
+@@ -249,19 +371,21 @@ if(CUDA_FOUND)
      add_subdirectory(src/cudadecoderbin)
  endif()
  
@@ -1811,7 +1844,7 @@ index c7f4582..62b30d5 100644
          unset(kaldi_exe_NAME)
          unset(kaldi_exe_SOURCES)
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index 4181dc4..dda8efb 100644
+index 4181dc4..f853352 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
 @@ -95,6 +95,20 @@ def get_exe_additional_depends(t):
@@ -1844,7 +1877,26 @@ index 4181dc4..dda8efb 100644
  """.format(tgt=self.target_name, dir=self.dir_name))
  
          return "\n".join(ret)
-@@ -276,14 +290,37 @@ class CMakeListsLibrary(object):
+@@ -235,7 +249,7 @@ class CMakeListsLibrary(object):
+             self.source_list.append("${CUDA_OBJS}")
+             ret.append("if(CUDA_FOUND)")
+             ret.append("    cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)")
+-            ret.append("    cuda_compile(CUDA_OBJS")
++            ret.append("    cuda_compile(CUDA_OBJS SHARED")
+             for f in self.cuda_source_list:
+                 ret.append("        " + f)
+             ret.append("    )")
+@@ -248,6 +262,9 @@ class CMakeListsLibrary(object):
+         for f in self.source_list:
+             ret.append("    " + f)
+         ret.append(")\n")
++
++        #if len(self.cuda_source_list) > 0:
++        #    ret.append(f"set_property(TARGET {self.target_name} PROPERTY CUDA_SEPARABLE_COMPILATION ON)\n")
+         ret.append("target_include_directories(" + self.target_name + " PUBLIC ")
+         ret.append("     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>")
+         ret.append("     $<INSTALL_INTERFACE:include/kaldi>")
+@@ -276,14 +293,43 @@ class CMakeListsLibrary(object):
              ret.append("endif()")
  
          ret.append("""
@@ -1862,6 +1914,12 @@ index 4181dc4..dda8efb 100644
 +            EXPORT kaldi-targets
 +            RUNTIME 
 +                DESTINATION ${{CMAKE_INSTALL_BINDIR}}
++                COMPONENT kaldi
++            LIBRARY 
++                DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
++                COMPONENT kaldi
++            ARCHIVE 
++                DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
 +                COMPONENT kaldi
 +        )
 +
@@ -1890,7 +1948,7 @@ index 4181dc4..dda8efb 100644
  """.format(tgt=self.target_name, dir=self.dir_name))
  
          return "\n".join(ret)
-@@ -303,7 +340,10 @@ class CMakeListsExecutable(object):
+@@ -303,7 +349,10 @@ class CMakeListsExecutable(object):
      def gen_code(self):
          ret = []
          for exe_name, file_name, depend in self.list:
@@ -1903,22 +1961,37 @@ index 4181dc4..dda8efb 100644
                         "add_kaldi_executable(NAME " + exe_name + " SOURCES " + file_name + " DEPENDS " + depends + ")"))
  
 diff --git a/cmake/third_party/openfst.cmake b/cmake/third_party/openfst.cmake
-index edb4314..a6fbad3 100644
+index edb4314..096a482 100644
 --- a/cmake/third_party/openfst.cmake
 +++ b/cmake/third_party/openfst.cmake
-@@ -14,12 +14,75 @@ if(NOT openfst_POPULATED)
+@@ -9,17 +9,91 @@ FetchContent_Declare(
+ 
+ FetchContent_GetProperties(openfst)
+ if(NOT openfst_POPULATED)
++    
++    if(MSVC)
++    # Added in source, but we actually should do it in build script, whatever...
++    # add_definitions(-DWIN32_LEAN_AND_MEAN=1)
++
++    add_compile_options(/permissive- /FS /wd4819 /EHsc /bigobj)
++
++    # some warnings related with fst
++    add_compile_options(/wd4018 /wd4244 /wd4267 /wd4291 /wd4305)
++
++    endif()
+     FetchContent_Populate(openfst)
+     include_directories(${openfst_SOURCE_DIR}/src/include)
  
      add_subdirectory(${openfst_SOURCE_DIR} ${openfst_BINARY_DIR})
  
 -    install(DIRECTORY ${openfst_SOURCE_DIR}/src/include/ DESTINATION include/
 -            FILES_MATCHING PATTERN "*.h")
--
+ 
 -    install(TARGETS fst
 -            EXPORT kaldi-targets
 -            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 -            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 -            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-+
 +    if(CONDA_ROOT)
 +
 +        if(MSVC)
@@ -1990,6 +2063,56 @@ index edb4314..a6fbad3 100644
 +
 +    endif() 
  endif()
+diff --git a/src/cudadecoder/batched-threaded-nnet3-cuda-online-pipeline.cc b/src/cudadecoder/batched-threaded-nnet3-cuda-online-pipeline.cc
+index 65e2f15..9c89d03 100644
+--- a/src/cudadecoder/batched-threaded-nnet3-cuda-online-pipeline.cc
++++ b/src/cudadecoder/batched-threaded-nnet3-cuda-online-pipeline.cc
+@@ -32,6 +32,23 @@
+ #include "lat/lattice-functions.h"
+ #include "nnet3/nnet-utils.h"
+ 
++#ifdef _WIN32
++  #include <windows.h>
++
++  void usleep(__int64 usec) 
++  { 
++      HANDLE timer; 
++      LARGE_INTEGER ft; 
++
++      ft.QuadPart = -(10*usec); // Convert to 100 nanosecond interval, negative value indicates relative time
++
++      timer = CreateWaitableTimer(NULL, TRUE, NULL); 
++      SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0); 
++      WaitForSingleObject(timer, INFINITE); 
++      CloseHandle(timer); 
++  }
++#endif
++
+ namespace kaldi {
+ namespace cuda_decoder {
+ 
+diff --git a/src/cudafeat/feature-online-cmvn-cuda.cu b/src/cudafeat/feature-online-cmvn-cuda.cu
+index f2fa54b..ba13b4f 100644
+--- a/src/cudafeat/feature-online-cmvn-cuda.cu
++++ b/src/cudafeat/feature-online-cmvn-cuda.cu
+@@ -87,7 +87,7 @@ __global__ void apply_cmvn_kernel(
+ 
+   for (int c = threadIdx.x; c < num_cols; c += blockDim.x) {
+     float2 frame_stats =
+-        reinterpret_cast<const float2 __restrict__*>(&stats[r * lds])[c];
++        reinterpret_cast<const float2 *__restrict__>(&stats[r * lds])[c];
+ 
+     float val = feat_in[r * ldi + c];
+ 
+@@ -100,7 +100,7 @@ __global__ void apply_cmvn_kernel(
+ 
+       // stats at the start row of the window that must be removed
+       float2 ostats =
+-          reinterpret_cast<const float2 __restrict__*>(&stats[o * lds])[c];
++          reinterpret_cast<const float2 *__restrict__>(&stats[o * lds])[c];
+ 
+       // remove start of the window stats
+       frame_stats = frame_stats - ostats;
 -- 
 2.34.1
 
