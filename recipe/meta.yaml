@@ -95,14 +95,16 @@ outputs:
       - bin/*   # [not win]
       - Library/bin/*           # [win]
 
-  - name: {{ kaldi_cpu_gpu }}-dev
+  {% set kaldi_cpu_gpu_dev = "kaldi-cpu-dev" %}   # [cuda_compiler_version == "None"]
+  {% set kaldi_cpu_gpu_dev = "kaldi-cuda-dev" %}   # [cuda_compiler_version != "None"]
+  - name: {{ kaldi_cpu_gpu_dev }}
     build:
       string: cuda{{ cuda_compiler_version | replace('.', '') }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
       string: cpu_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [cuda_compiler_version == "None"]
       detect_binary_files_with_prefix: False
       # weigh down cpu implementation and give cuda preference
       track_features:
-        - {{ kaldi_cpu_gpu }}
+        - {{ kaldi_cpu_gpu_dev }}
     requirements:
       run:
         - {{ pin_subpackage("kaldi-cpu", exact=True) }}  # [cuda_compiler_version == "None"]
@@ -114,7 +116,7 @@ outputs:
       - Library/lib/libkaldi*.lib  # [win]
     test:
       commands:
-        - test -f ${PREFIX}/include/kaldi/io-funcs.h  # [not win]
+        - test -f ${PREFIX}/include/kaldi/base/io-funcs.h  # [not win]
         - if not exist %PREFIX%\\Library\\lib\\fst.lib exit 1  # [win]
         - if not exist %PREFIX%\\Library\\lib\\kaldi-base.lib exit 1  # [win]
 
