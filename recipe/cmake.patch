@@ -1,4 +1,4 @@
-From 206b11123e73182b6e33380413221a82d6e6e449 Mon Sep 17 00:00:00 2001
+From 51f78a0761fdf218cab7177b07104608896f5d5c Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 1 Dec 2021 16:33:59 -0800
 Subject: [PATCH] Update CMake build
@@ -17,7 +17,7 @@ Subject: [PATCH] Update CMake build
  delete mode 100644 cmake/FindLAPACK.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8b2de3a..58b78fd 100644
+index 8b2de3a..51d34ea 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -222,7 +222,7 @@ index 8b2de3a..58b78fd 100644
 +        if(MSVC)
 +            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /permissive-,/FS,/wd4819,/EHsc,/bigobj")
 +            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /wd4018,/wd4244,/wd4267,/wd4291,/wd4305")
-+            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -std=c++${CMAKE_CXX_STANDARD}")
++            list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /std:c++${CMAKE_CXX_STANDARD}")
 +            if(BUILD_SHARED_LIBS)
 +                list(APPEND CUDA_NVCC_FLAGS_RELEASE -Xcompiler /MD)
 +                list(APPEND CUDA_NVCC_FLAGS_DEBUG -Xcompiler /MDd)
