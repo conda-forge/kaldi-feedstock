@@ -118,7 +118,9 @@ Current release info
 | --- | --- | --- | --- |
 | [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi-green.svg)](https://anaconda.org/conda-forge/kaldi) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi.svg)](https://anaconda.org/conda-forge/kaldi) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi.svg)](https://anaconda.org/conda-forge/kaldi) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi.svg)](https://anaconda.org/conda-forge/kaldi) |
 | [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi--cpu-green.svg)](https://anaconda.org/conda-forge/kaldi-cpu) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi-cpu.svg)](https://anaconda.org/conda-forge/kaldi-cpu) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi-cpu.svg)](https://anaconda.org/conda-forge/kaldi-cpu) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi-cpu.svg)](https://anaconda.org/conda-forge/kaldi-cpu) |
+| [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi--cpu--dev-green.svg)](https://anaconda.org/conda-forge/kaldi-cpu-dev) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi-cpu-dev.svg)](https://anaconda.org/conda-forge/kaldi-cpu-dev) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi-cpu-dev.svg)](https://anaconda.org/conda-forge/kaldi-cpu-dev) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi-cpu-dev.svg)](https://anaconda.org/conda-forge/kaldi-cpu-dev) |
 | [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi--cuda-green.svg)](https://anaconda.org/conda-forge/kaldi-cuda) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi-cuda.svg)](https://anaconda.org/conda-forge/kaldi-cuda) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi-cuda.svg)](https://anaconda.org/conda-forge/kaldi-cuda) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi-cuda.svg)](https://anaconda.org/conda-forge/kaldi-cuda) |
+| [![Conda Recipe](https://img.shields.io/badge/recipe-kaldi--cuda--dev-green.svg)](https://anaconda.org/conda-forge/kaldi-cuda-dev) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/kaldi-cuda-dev.svg)](https://anaconda.org/conda-forge/kaldi-cuda-dev) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/kaldi-cuda-dev.svg)](https://anaconda.org/conda-forge/kaldi-cuda-dev) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/kaldi-cuda-dev.svg)](https://anaconda.org/conda-forge/kaldi-cuda-dev) |
 
 Installing kaldi
 ================
@@ -130,10 +132,10 @@ conda config --add channels conda-forge
 conda config --set channel_priority strict
 ```
 
-Once the `conda-forge` channel has been enabled, `kaldi, kaldi-cpu, kaldi-cuda` can be installed with:
+Once the `conda-forge` channel has been enabled, `kaldi, kaldi-cpu, kaldi-cpu-dev, kaldi-cuda, kaldi-cuda-dev` can be installed with:
 
 ```
-conda install kaldi kaldi-cpu kaldi-cuda
+conda install kaldi kaldi-cpu kaldi-cpu-dev kaldi-cuda kaldi-cuda-dev
 ```
 
 It is possible to list all of the versions of `kaldi` available on your platform with:

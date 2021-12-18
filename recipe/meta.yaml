@@ -14,7 +14,7 @@ source:
     - cmake.patch
 
 build:
-  number: 6
+  number: 7
   skip: true  # [cuda_compiler_version == "10.2"]
   run_exports:
     - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
@@ -29,9 +29,6 @@ outputs:
       string: cuda{{ cuda_compiler_version | replace('.', '') }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
       string: cpu_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [cuda_compiler_version == "None"]
       script_env:
-        - CPPFLAGS="-std=c++14"  # [win]
-        - CXXFLAGS="-std=c++14 -Wno-deprecated-declarations"  # [win]
-        - CMAKE_CXX_STANDARD=14  # [win]
         - MATHLIB=MKL  # [x86]
         - MATHLIB=OpenBLAS  # [not x86]
     script: build_kaldi.sh  # [not win]
@@ -69,7 +66,7 @@ outputs:
         - libcblas * *openblas             # [not x86]
         - liblapack * *openblas            # [not x86]
         - openblas             # [not x86]
-        - openfst  # [not win]
+        - openfst  # [not win and build_platform == target_platform]
 
   {% set kaldi_cpu_gpu = "kaldi-cpu" %}   # [cuda_compiler_version == "None"]
   {% set kaldi_cpu_gpu = "kaldi-cuda" %}   # [cuda_compiler_version != "None"]
@@ -84,6 +81,44 @@ outputs:
     requirements:
       run:
         - {{ pin_subpackage("kaldi", exact=True) }}
+    files:
+      # Include files like
+      #   - libopenblasp-r0.3.5.so
+      #   - libopenblas_vortexp-r0.3.5.so
+      #   - libopenblas.so.0
+      # Avoid files
+      #   - libkaldi.lib
+      #   - include/kaldi/io-funcs.h
+      - lib/libkaldi*{{ SHLIB_EXT }}   # [not win]
+      - lib/libkaldi.so.*               # [linux]
+      - lib/libkaldi.*.dylib            # [osx]
+      - bin/*   # [not win]
+      - Library/bin/*           # [win]
+
+  {% set kaldi_cpu_gpu_dev = "kaldi-cpu-dev" %}   # [cuda_compiler_version == "None"]
+  {% set kaldi_cpu_gpu_dev = "kaldi-cuda-dev" %}   # [cuda_compiler_version != "None"]
+  - name: {{ kaldi_cpu_gpu_dev }}
+    build:
+      string: cuda{{ cuda_compiler_version | replace('.', '') }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
+      string: cpu_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [cuda_compiler_version == "None"]
+      detect_binary_files_with_prefix: False
+      # weigh down cpu implementation and give cuda preference
+      track_features:
+        - {{ kaldi_cpu_gpu_dev }}
+    requirements:
+      run:
+        - {{ pin_subpackage("kaldi-cpu", exact=True) }}  # [cuda_compiler_version == "None"]
+        - {{ pin_subpackage("kaldi-cuda", exact=True) }}  # [cuda_compiler_version != "None"]
+    files:
+      - include/kaldi/*/*.h  # [not win]
+      - Library/include/kaldi/*/*.h  # [win]
+      - Library/include/fst/*.h  # [win]
+      - Library/lib/libkaldi*.lib  # [win]
+    test:
+      commands:
+        - test -f ${PREFIX}/include/kaldi/base/io-funcs.h  # [not win]
+        - if not exist %PREFIX%\\Library\\lib\\fst.lib exit 1  # [win]
+        - if not exist %PREFIX%\\Library\\lib\\kaldi-base.lib exit 1  # [win]
 
 
 about:
