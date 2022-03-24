@@ -7,17 +7,17 @@ channel_targets:
 cuda_compiler:
 - nvcc
 cuda_compiler_version:
-- None
+- '11.1'
 cxx_compiler:
 - gxx
 cxx_compiler_version:
-- '9'
+- '10'
 docker_image:
-- quay.io/condaforge/linux-anvil-cos7-x86_64
+- quay.io/condaforge/linux-anvil-cuda:11.1
 fortran_compiler:
 - gfortran
 fortran_compiler_version:
-- '9'
+- '10'
 icu:
 - '69'
 mkl:
