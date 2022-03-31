@@ -14,7 +14,7 @@ source:
     - cmake.patch
 
 build:
-  number: 8
+  number: 9
   skip: true  # [cuda_compiler_version == "10.2"]
   run_exports:
     - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
