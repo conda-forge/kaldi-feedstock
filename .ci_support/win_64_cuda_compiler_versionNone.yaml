@@ -9,7 +9,7 @@ cuda_compiler_version:
 cxx_compiler:
 - vs2019
 icu:
-- '69'
+- '70'
 mkl:
 - '2022'
 mkl_devel:

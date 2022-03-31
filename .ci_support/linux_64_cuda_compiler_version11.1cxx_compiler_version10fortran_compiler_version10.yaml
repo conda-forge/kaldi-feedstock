@@ -11,15 +11,15 @@ cuda_compiler_version:
 cxx_compiler:
 - gxx
 cxx_compiler_version:
-- '9'
+- '10'
 docker_image:
 - quay.io/condaforge/linux-anvil-cuda:11.1
 fortran_compiler:
 - gfortran
 fortran_compiler_version:
-- '9'
+- '10'
 icu:
-- '69'
+- '70'
 mkl:
 - '2022'
 mkl_devel:
