@@ -27,7 +27,7 @@ if "%cuda_compiler_version%"=="None" (
         -DCMAKE_BUILD_TYPE=Release ^
         -DCONDA_ROOT="%LIBRARY_PREFIX%" ^
         -DCMAKE_INSTALL_PREFIX="%LIBRARY_PREFIX%" ^
-        -DCUDA_TOOLKIT_ROOT_DIR="%CUDA_HOME%" ^  
+        -DCUDA_TOOLKIT_ROOT_DIR="%CUDA_HOME%" ^
         -DKALDI_VERSION="%PKG_VERSION%" ^
         -DBUILD_SHARED_LIBS=OFF ^
         -DKALDI_BUILD_TEST=OFF ^
