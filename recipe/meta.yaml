@@ -7,7 +7,7 @@
 
 {% set kaldi_libraries = [
     "base", "matrix", "cudamatrix", "util", "feat", "tree", "gmm", "transform",
-    "sgmm2", "fstext", "hmm", "lm", "decoder", "lat", "nnet", "nnet2", "nnet3",
+    "fstext", "hmm", "lm", "decoder", "lat", "nnet", "nnet2", "nnet3",
     "rnnlm", "chain", "ivector", "online2", "kws"
 ] + (cuda_compiler_version != "None") * [
     "cudafeat", "cudadecoder"
@@ -20,7 +20,7 @@
 {% set kaldi_headers = [
     "base/io-funcs.h", "matrix/cblas-wrappers.h", "cudamatrix/cu-array.h",
     "util/basic-filebuf.h", "feat/feature-common.h", "tree/build-tree.h",
-    "gmm/am-diag-gmm.h", "transform/cmvn.h", "sgmm2/am-sgmm2.h",
+    "gmm/am-diag-gmm.h", "transform/cmvn.h",
     "fstext/context-fst.h", "hmm/hmm-utils.h", "lm/arpa-file-parser.h",
     "decoder/grammar-fst.h", "lat/arctic-weight.h", "nnet/nnet-activation.h",
     "nnet2/am-nnet.h", "nnet3/attention.h", "rnnlm/sampler.h",
@@ -39,6 +39,8 @@ package:
 source:
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
   sha256: 153ae41654046f1997c247d3328c17124745b70be090fe1ee73442160e7b08c7
+  patches:
+    - sgmm2.patch
 
 build:
   number: 0

@@ -3,6 +3,9 @@ setlocal EnableDelayedExpansion
 mkdir build
 cd build
 
+set "LIBRARY_PREFIX=%LIBRARY_PREFIX:\=/%"
+echo "%LIBRARY_PREFIX%"
+
 if "%cuda_compiler_version%"=="None" (
     set USE_CUDA=0
 ) else (
