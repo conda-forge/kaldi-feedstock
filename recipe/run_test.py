@@ -7,13 +7,7 @@ lib_exts = {'darwin': '.dylib',
             'linux': '.so'
             }
 
-cuda_version = os.environ.get('cuda_compiler_version', None)
-
-try:
-    float(cuda_version)
-    test_cuda = True
-except ValueError:
-    test_cuda = False
+test_cuda = os.environ.get('CF_CUDA_ENABLED', "False") == "True"
 
 if test_cuda:
     print("TESTING CUDA")

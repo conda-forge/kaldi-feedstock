@@ -73,6 +73,7 @@ outputs:
         - libcblas
         - liblapack
         - liblapacke
+        - libtmglib
         - magma           # [os.environ.get("cuda_compiler_version", "None") != "None"]
         - pthreads-win32  # [win]
         - zlib

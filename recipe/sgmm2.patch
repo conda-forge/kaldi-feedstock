@@ -1,12 +1,26 @@
-From 1421700872afb422263cff330634088fc602e6b3 Mon Sep 17 00:00:00 2001
+From f670ad9ffdab21698ae45ee40ef5aa42fc23d9a0 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Sun, 17 Apr 2022 08:47:02 -0700
 Subject: [PATCH] Update cmake
 
 ---
+ CMakeLists.txt              | 2 +-
  cmake/gen_cmake_skeleton.py | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ff24df4..974ae42 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -87,7 +87,7 @@ if(CONDA_ROOT)
+     # https://github.com/kaldi-asr/kaldi/blob/master/src/matrix/kaldi-blas.h#L95-L113
+     add_definitions(-DHAVE_OPENBLAS=1)
+     if(MSVC)
+-        include_directories($ENV{LIBRARY_INC}/)
++        link_libraries(cblas lapack)
+         # necessary macros to compile on windows, from here:
+         # https://icl.cs.utk.edu/lapack-for-windows/lapack/
+         add_definitions(-DADD_)
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
 index 8056786..fa9c515 100644
 --- a/cmake/gen_cmake_skeleton.py
