@@ -3,13 +3,13 @@
 # patch version is the number of commits since then, see
 # https://github.com/kaldi-asr/kaldi/blob/master/cmake/VersionHelper.cmake
 {% set commit = "5a37217e107bc9cb5e4e1ad2b290cecbdedfa799" %}
-{% set kaldi_proc_type = "cuda" if os.environ.get("cuda_compiler_version", "None") != "None" else "cpu" %}
+{% set kaldi_proc_type = "cuda" if cuda_compiler_version != "None" else "cpu" %}
 
 {% set kaldi_libraries = [
     "base", "matrix", "cudamatrix", "util", "feat", "tree", "gmm", "transform",
     "fstext", "hmm", "lm", "decoder", "lat", "nnet", "nnet2", "nnet3",
     "rnnlm", "chain", "ivector", "online2", "kws"
-] + (os.environ.get("cuda_compiler_version", "None") != "None") * [
+] + (cuda_compiler_version != "None") * [
     "cudafeat", "cudadecoder"
 ] + (not win) * [
     "online"
@@ -26,14 +26,14 @@
     "nnet2/am-nnet.h", "nnet3/attention.h", "rnnlm/sampler.h",
     "chain/chain-datastruct.h", "ivector/plda.h", "online2/online-endpoint.h",
     "kws/kaldi-kws.h", "itf/options-itf.h"
-] + (os.environ.get("cuda_compiler_version", "None") != "None") * [
+] + (cuda_compiler_version != "None") * [
     "cudafeat/lane-desc.h", "cudadecoder/cuda-fst.h"
 ] + (not win) * [
     "online/online-decodable.h"
 ] %}
 
 package:
-  name: kaldi
+  name: kaldi-split
   version: {{ version }}
 
 source:
@@ -44,7 +44,7 @@ source:
 
 build:
   number: 0
-  skip: true  # [os.environ.get("cuda_compiler_version", "None") == "10.2"]
+  skip: true  # [cuda_compiler_version == "10.2"]
 
 requirements:
   build:
@@ -53,19 +53,19 @@ requirements:
 outputs:
   - name: kaldi
     build:
-      string: cuda{{ cuda_compiler_version | replace('.', '') }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [os.environ.get("cuda_compiler_version", "None") != "None"]
-      string: cpu_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [os.environ.get("cuda_compiler_version", "None") == "None"]
-    script: build_kaldi.sh  # [not win]
-    script: bld_kaldi.bat   # [win]
+      string: cuda{{ cuda_compiler_version | replace('.', '') }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
+      string: cpu_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [cuda_compiler_version == "None"]
+    script: build_kaldi.sh   # [not win]
+    script: build_kaldi.bat  # [win]
     requirements:
       build:
         - {{ compiler('cxx') }}
         - {{ compiler('fortran') }}  # [not win]
-        - {{ compiler('cuda') }}  # [os.environ.get("cuda_compiler_version", "None") != "None"]
+        - {{ compiler('cuda') }}     # [cuda_compiler_version != "None"]
         - cmake
         - ninja
         - m2-patch  # [win]
-        - libtool  # [not win]
+        - libtool   # [not win]
         - automake  # [not win]
       host:
         - icu
@@ -74,7 +74,7 @@ outputs:
         - liblapack
         - liblapacke
         - libtmglib
-        - magma           # [os.environ.get("cuda_compiler_version", "None") != "None"]
+        - magma           # [cuda_compiler_version != "None"]
         - pthreads-win32  # [win]
         - zlib
       run:
@@ -82,11 +82,10 @@ outputs:
         - libcblas
         - liblapack
         - liblapacke
-        - magma    # [os.environ.get("cuda_compiler_version", "None") != "None"]
+        - magma    # [cuda_compiler_version != "None"]
         - openfst  # [not win and build_platform == target_platform]
       run_exports:
         - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
-
     test:
       # will also run run_test.py (checking the binaries)
       commands:
@@ -121,3 +120,4 @@ extra:
   recipe-maintainers:
     - mmcauliffe
     - mcernak
+  feedstock-name: kaldi
