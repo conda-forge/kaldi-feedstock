@@ -65,11 +65,7 @@ if [[ ${cuda_compiler_version} != "None" ]]; then
     export CUDA_TOOLKIT_ROOT_DIR=$CUDA_HOME
     export MAGMA_HOME="${PREFIX}"
 else
-    if [[ "$target_platform" == *-64 ]]; then
-      export BLAS="MKL"
-    fi
     export USE_CUDA=0
-    export USE_MKLDNN=1
 fi
 
 export CMAKE_BUILD_TYPE=Release
@@ -83,10 +79,12 @@ mkdir build
 pushd build
 
 cmake ${CMAKE_ARGS} \
-              -DMATHLIB="${MATHLIB}" \
-              -DCONDA_ROOT="${PREFIX}" \
-               -DKALDI_BUILD_TEST=OFF \
-              -DOVERRIDE_KALDI_VERSION="${PKG_VERSION}" ..
+    -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+    -DCONDA_ROOT="${PREFIX}" \
+    -DBUILD_SHARED_LIBS=ON \
+    -DKALDI_BUILD_TEST=OFF \
+    -DKALDI_VERSION="${PKG_VERSION}" \
+    ..
 
 
 cmake --build . --verbose --config Release -- -v -j ${CPU_COUNT}
