@@ -1,15 +1,17 @@
-From 42f73638875cb969886dd0cb9080f05f2fa77081 Mon Sep 17 00:00:00 2001
+From 724d1b0600ef255f67e0d2c68fd1e3fb9409b05b Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Sun, 17 Apr 2022 08:47:02 -0700
 Subject: [PATCH] Update cmake
 
 ---
- CMakeLists.txt              | 2 +-
- cmake/gen_cmake_skeleton.py | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ CMakeLists.txt                                  |  2 +-
+ cmake/gen_cmake_skeleton.py                     |  8 ++++----
+ cmake/third_party/openfst.cmake                 |  1 +
+ ...tched-threaded-nnet3-cuda-online-pipeline.cc | 17 +++++++++++++++++
+ 4 files changed, 23 insertions(+), 5 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index ff24df434..974ae4288 100644
+index ff24df4..974ae42 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -87,7 +87,7 @@ if(CONDA_ROOT)
@@ -22,7 +24,7 @@ index ff24df434..974ae4288 100644
          # https://icl.cs.utk.edu/lapack-for-windows/lapack/
          add_definitions(-DADD_)
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index 8056786bd..fa9c51599 100644
+index 8056786..f2de074 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
 @@ -92,7 +92,7 @@ def get_exe_additional_depends(t):
@@ -34,6 +36,72 @@ index 8056786bd..fa9c51599 100644
          "gmm-rescore-lattice": ["hmm", "lat"],
  
          # solve fgmmbin
+@@ -194,7 +194,7 @@ class CMakeListsHeaderLibrary(object):
+         ret.append("""
+ install(TARGETS {tgt} EXPORT kaldi-targets)
+ 
+-install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
++install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir} COMPONENT kaldi)
+ """.format(tgt=self.target_name, dir=self.dir_name))
+ 
+         return "\n".join(ret)
+@@ -249,7 +249,7 @@ class CMakeListsLibrary(object):
+             self.source_list.append("${CUDA_OBJS}")
+             ret.append("if(CUDA_FOUND)")
+             ret.append("    cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)")
+-            ret.append("    cuda_compile(CUDA_OBJS")
++            ret.append("    cuda_compile(CUDA_OBJS SHARED")
+             for f in self.cuda_source_list:
+                 ret.append("        " + f)
+             ret.append("    )")
+@@ -296,7 +296,7 @@ install(TARGETS {tgt}
+     LIBRARY DESTINATION ${{CMAKE_INSTALL_LIBDIR}} COMPONENT kaldi
+     RUNTIME DESTINATION ${{CMAKE_INSTALL_BINDIR}} COMPONENT kaldi
+ )
+-install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir})
++install(FILES ${{PUBLIC_HEADERS}} DESTINATION include/kaldi/{dir} COMPONENT kaldi)
+ """.format(tgt=self.target_name, dir=self.dir_name))
+ 
+         return "\n".join(ret)
+diff --git a/cmake/third_party/openfst.cmake b/cmake/third_party/openfst.cmake
+index 26d25ba..ccd2cd7 100644
+--- a/cmake/third_party/openfst.cmake
++++ b/cmake/third_party/openfst.cmake
+@@ -54,6 +54,7 @@ if(NOT openfst_POPULATED)
+             )
+ 
+             install(DIRECTORY ${openfst_SOURCE_DIR}/src/include/ DESTINATION include/
++            COMPONENT kaldi
+                     FILES_MATCHING PATTERN "*.h")
+ 
+             install(TARGETS fst
+diff --git a/src/cudadecoder/batched-threaded-nnet3-cuda-online-pipeline.cc b/src/cudadecoder/batched-threaded-nnet3-cuda-online-pipeline.cc
+index 65e2f15..d44ad27 100644
+--- a/src/cudadecoder/batched-threaded-nnet3-cuda-online-pipeline.cc
++++ b/src/cudadecoder/batched-threaded-nnet3-cuda-online-pipeline.cc
+@@ -32,6 +32,23 @@
+ #include "lat/lattice-functions.h"
+ #include "nnet3/nnet-utils.h"
+ 
++#ifdef _WIN32
++  #include <windows.h>
++
++  void usleep(__int64 usec)
++  {
++      HANDLE timer;
++      LARGE_INTEGER ft;
++
++      ft.QuadPart = -(10*usec); // Convert to 100 nanosecond interval, negative value indicates relative time
++
++      timer = CreateWaitableTimer(NULL, TRUE, NULL);
++      SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
++      WaitForSingleObject(timer, INFINITE);
++      CloseHandle(timer);
++  }
++#endif
++
+ namespace kaldi {
+ namespace cuda_decoder {
+ 
 -- 
-2.35.1.windows.2
-
+2.35.3
