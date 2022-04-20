@@ -73,7 +73,6 @@ outputs:
         - libcblas
         - liblapack
         - liblapacke
-        - libtmglib
         - magma           # [cuda_compiler_version != "None"]
         - pthreads-win32  # [win]
         - zlib
