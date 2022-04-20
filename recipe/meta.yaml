@@ -84,6 +84,7 @@ outputs:
         - liblapacke
         - magma    # [cuda_compiler_version != "None"]
         - openfst  # [not win and build_platform == target_platform]
+        - ucrt     # [win]
       run_exports:
         - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
     test:
