@@ -1,7 +1,7 @@
-From 724d1b0600ef255f67e0d2c68fd1e3fb9409b05b Mon Sep 17 00:00:00 2001
+From 8beba43660c2ce14b66f9ee3775f3b0ec7513d19 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Sun, 17 Apr 2022 08:47:02 -0700
-Subject: [PATCH] Update cmake
+Subject: [PATCH 1/2] Update cmake
 
 ---
  CMakeLists.txt                                  |  2 +-
@@ -11,7 +11,7 @@ Subject: [PATCH] Update cmake
  4 files changed, 23 insertions(+), 5 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index ff24df4..974ae42 100644
+index ff24df434..974ae4288 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -87,7 +87,7 @@ if(CONDA_ROOT)
@@ -24,7 +24,7 @@ index ff24df4..974ae42 100644
          # https://icl.cs.utk.edu/lapack-for-windows/lapack/
          add_definitions(-DADD_)
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index 8056786..f2de074 100644
+index 8056786bd..f2de074fd 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
 @@ -92,7 +92,7 @@ def get_exe_additional_depends(t):
@@ -64,7 +64,7 @@ index 8056786..f2de074 100644
  
          return "\n".join(ret)
 diff --git a/cmake/third_party/openfst.cmake b/cmake/third_party/openfst.cmake
-index 26d25ba..ccd2cd7 100644
+index 26d25baef..ccd2cd726 100644
 --- a/cmake/third_party/openfst.cmake
 +++ b/cmake/third_party/openfst.cmake
 @@ -54,6 +54,7 @@ if(NOT openfst_POPULATED)
@@ -76,7 +76,7 @@ index 26d25ba..ccd2cd7 100644
  
              install(TARGETS fst
 diff --git a/src/cudadecoder/batched-threaded-nnet3-cuda-online-pipeline.cc b/src/cudadecoder/batched-threaded-nnet3-cuda-online-pipeline.cc
-index 65e2f15..d44ad27 100644
+index 65e2f152e..d44ad273d 100644
 --- a/src/cudadecoder/batched-threaded-nnet3-cuda-online-pipeline.cc
 +++ b/src/cudadecoder/batched-threaded-nnet3-cuda-online-pipeline.cc
 @@ -32,6 +32,23 @@
@@ -104,4 +104,5 @@ index 65e2f15..d44ad27 100644
  namespace cuda_decoder {
  
 -- 
-2.35.3
+2.35.3.windows.1
+

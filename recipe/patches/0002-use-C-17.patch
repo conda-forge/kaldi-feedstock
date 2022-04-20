@@ -1,0 +1,25 @@
+From 946dcdf08b454d8f24bb627e18f1f9bfe1b03b9a Mon Sep 17 00:00:00 2001
+From: "H. Vetinari" <h.vetinari@gmx.com>
+Date: Wed, 20 Apr 2022 23:59:27 +1100
+Subject: [PATCH 2/2] use C++17
+
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 974ae4288..5bfc03ae0 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -43,7 +43,7 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE}
+ )
+ unset(IS_LIB_SHARE)
+ 
+-set(CMAKE_CXX_STANDARD 14)
++set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_EXTENSIONS OFF)
+ set(CMAKE_INSTALL_MESSAGE LAZY) # hide "-- Up-to-date: ..."
+ if(BUILD_SHARED_LIBS)
+-- 
+2.35.3.windows.1
+
