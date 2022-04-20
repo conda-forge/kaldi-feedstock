@@ -43,7 +43,7 @@ source:
     - patches/0001-Update-cmake.patch
 
 build:
-  number: 0
+  number: 1
   skip: true  # [cuda_compiler_version == "10.2"]
 
 requirements:
