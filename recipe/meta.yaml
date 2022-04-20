@@ -40,7 +40,7 @@ source:
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
   sha256: 153ae41654046f1997c247d3328c17124745b70be090fe1ee73442160e7b08c7
   patches:
-    - sgmm2.patch
+    - patches/0001-Update-cmake.patch
 
 build:
   number: 0
