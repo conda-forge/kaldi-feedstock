@@ -17,13 +17,13 @@ fortran_compiler_version:
 icu:
 - '70'
 libblas:
-- 3.8 *netlib
+- 3.9 *netlib
 libcblas:
-- 3.8 *netlib
+- 3.9 *netlib
 liblapack:
-- 3.8 *netlib
+- 3.9 *netlib
 liblapacke:
-- 3.8 *netlib
+- 3.9 *netlib
 macos_machine:
 - x86_64-apple-darwin13.4.0
 pin_run_as_build:

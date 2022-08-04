@@ -49,44 +49,6 @@ def check_libraries(libraries_files):
             print(f"{path} does not exist")
             sys.exit(1)
 
-openfst_bins="""fstarcsort 
-fstclosure 
-fstcompile 
-fstcompose 
-fstconcat 
-fstconnect 
-fstconvert 
-fstdeterminize
-fstdifference 
-fstdisambiguate 
-fstdraw 
-fstencode 
-fstepsnormalize 
-fstequal 
-fstequivalent
-fstinfo 
-fstintersect 
-fstinvert 
-fstisomorphic 
-fstmap 
-fstminimize 
-fstprint 
-fstproject 
-fstprune
-fstpush 
-fstrandgen 
-fstrelabel 
-fstreplace 
-fstreverse 
-fstreweight 
-fstrmepsilon 
-fstshortestdistance
-fstshortestpath 
-fstsymbols 
-fstsynchronize 
-fsttopsort
-fstunion"""
-
 bins="""align-equal align-equal-compiled acc-tree-stats
         show-alignments compile-questions cluster-phones
         compute-wer compute-wer-bootci make-h-transducer
@@ -407,7 +369,6 @@ feature-online-cmvn-cuda.h                      online-ivector-feature-cuda.h"""
     libraries += """ libkaldi-cudafeat libkaldi-cudadecoder"""
 
 if __name__ == '__main__':
-    check_outputs(openfst_bins)
     check_outputs(bins)
     check_outputs(chain_bins)
     check_outputs(feat_bins)
