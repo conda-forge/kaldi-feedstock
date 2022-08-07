@@ -11,13 +11,13 @@ cxx_compiler:
 icu:
 - '70'
 libblas:
-- 3.8 *netlib
+- 3.9 *netlib
 libcblas:
-- 3.8 *netlib
+- 3.9 *netlib
 liblapack:
-- 3.8 *netlib
+- 3.9 *netlib
 liblapacke:
-- 3.8 *netlib
+- 3.9 *netlib
 pin_run_as_build:
   zlib:
     max_pin: x.x
