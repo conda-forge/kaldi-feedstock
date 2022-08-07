@@ -44,7 +44,7 @@ source:
     - patches/0002-Remove-Windows-executables.patch
 
 build:
-  number: 2
+  number: 3
   skip: true  # [cuda_compiler_version == "10.2"]
 
 requirements:
