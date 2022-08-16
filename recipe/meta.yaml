@@ -1,8 +1,8 @@
-{% set version = "5.5.1016" %}
+{% set version = "5.5.1043" %}
 # minor/major is https://github.com/kaldi-asr/kaldi/blob/master/src/.version;
 # patch version is the number of commits since then, see
 # https://github.com/kaldi-asr/kaldi/blob/master/cmake/VersionHelper.cmake
-{% set commit = "5a37217e107bc9cb5e4e1ad2b290cecbdedfa799" %}
+{% set commit = "b8f30acc8134f55cc064781c00880f73a64f3c75" %}
 {% set kaldi_proc_type = "cuda" if cuda_compiler_version != "None" else "cpu" %}
 
 {% set kaldi_libraries = [
@@ -40,11 +40,10 @@ source:
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
   sha256: 153ae41654046f1997c247d3328c17124745b70be090fe1ee73442160e7b08c7
   patches:
-    - patches/0001-Update-cmake.patch
     - patches/0002-Remove-Windows-executables.patch
 
 build:
-  number: 3
+  number: 0
   skip: true  # [cuda_compiler_version == "10.2"]
 
 requirements:
