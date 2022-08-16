@@ -41,6 +41,7 @@ source:
   sha256: c45a3dd7ac3464e7422bdee060021eaa00c7bec4a541ff9f3c85d63fe871f03f
   patches:
     - patches/0002-Remove-Windows-executables.patch
+    - patches/0003-Fix-CMake-skeleton-bug.patch
 
 build:
   number: 0
