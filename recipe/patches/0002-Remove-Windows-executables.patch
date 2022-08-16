@@ -1,18 +1,17 @@
-From e7fb4d1d059d20d27c903d1b8abcecf486888628 Mon Sep 17 00:00:00 2001
+From 97f62e1df1d1cf323ce6ec9359710ce4097747cf Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
-Date: Wed, 3 Aug 2022 20:26:42 -0700
-Subject: [PATCH] Update CMake to skip installation of executables on Windows
- pending OpenFst #27
+Date: Tue, 16 Aug 2022 15:48:03 -0700
+Subject: [PATCH] Remove Windows executables
 
 ---
- cmake/third_party/openfst.cmake | 61 ++++-----------------------------
- 1 file changed, 6 insertions(+), 55 deletions(-)
+ cmake/third_party/openfst.cmake | 57 +--------------------------------
+ 1 file changed, 1 insertion(+), 56 deletions(-)
 
 diff --git a/cmake/third_party/openfst.cmake b/cmake/third_party/openfst.cmake
-index ccd2cd7..a134b2a 100644
+index f9fff8a..5cd3473 100644
 --- a/cmake/third_party/openfst.cmake
 +++ b/cmake/third_party/openfst.cmake
-@@ -17,61 +17,12 @@ if(NOT openfst_POPULATED)
+@@ -17,62 +17,7 @@ if(NOT openfst_POPULATED)
  
      if(CONDA_ROOT)
  
@@ -53,7 +52,7 @@ index ccd2cd7..a134b2a 100644
 -            )
 -
 -            install(DIRECTORY ${openfst_SOURCE_DIR}/src/include/ DESTINATION include/
--            COMPONENT kaldi
+-                    COMPONENT kaldi
 -                    FILES_MATCHING PATTERN "*.h")
 -
 -            install(TARGETS fst
@@ -71,15 +70,11 @@ index ccd2cd7..a134b2a 100644
 -                    )
 -
 -        endif()
-+        install(TARGETS fst
-+                LIBRARY
-+                    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-+                    COMPONENT kaldi
-+                    NAMELINK_SKIP # Link to so with version to avoid conflicts with OpenFst 1.8.2 on conda
-+                )
- 
+-
++        if(MSVC) 
      else() # Original functionality
  
+         install(DIRECTORY ${openfst_SOURCE_DIR}/src/include/ DESTINATION include/
 -- 
-2.35.3
+2.37.1
 
