@@ -87,9 +87,14 @@ cmake ${CMAKE_ARGS} \
     ..
 
 
-cmake --build . --verbose --config Release -- -v -j ${CPU_COUNT}
+cmake --build . --verbose --config Release -- -v -j 1
 
 cmake --install . --component kaldi --verbose --config Release
 
+popd
+
+pushd python_package
+
+python -m pip install . -vv
 
 popd
