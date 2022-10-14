@@ -1,18 +1,17 @@
-From e7fb4d1d059d20d27c903d1b8abcecf486888628 Mon Sep 17 00:00:00 2001
+From d4308a688c7b89477d27a80234c80a9bdff7aa52 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
-Date: Wed, 3 Aug 2022 20:26:42 -0700
+Date: Thu, 13 Oct 2022 23:04:24 -0700
 Subject: [PATCH] Update CMake to skip installation of executables on Windows
- pending OpenFst #27
 
 ---
- cmake/third_party/openfst.cmake | 61 ++++-----------------------------
- 1 file changed, 6 insertions(+), 55 deletions(-)
+ cmake/third_party/openfst.cmake | 59 ++++-----------------------------
+ 1 file changed, 6 insertions(+), 53 deletions(-)
 
 diff --git a/cmake/third_party/openfst.cmake b/cmake/third_party/openfst.cmake
-index ccd2cd7..a134b2a 100644
+index f9fff8a..e004bf2 100644
 --- a/cmake/third_party/openfst.cmake
 +++ b/cmake/third_party/openfst.cmake
-@@ -17,61 +17,12 @@ if(NOT openfst_POPULATED)
+@@ -17,61 +17,14 @@ if(NOT openfst_POPULATED)
  
      if(CONDA_ROOT)
  
@@ -53,7 +52,11 @@ index ccd2cd7..a134b2a 100644
 -            )
 -
 -            install(DIRECTORY ${openfst_SOURCE_DIR}/src/include/ DESTINATION include/
--            COMPONENT kaldi
++        
++        install(TARGETS fst
++                LIBRARY
++                    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                     COMPONENT kaldi
 -                    FILES_MATCHING PATTERN "*.h")
 -
 -            install(TARGETS fst
@@ -69,17 +72,13 @@ index ccd2cd7..a134b2a 100644
 -                        COMPONENT kaldi
 -                        NAMELINK_SKIP # Link to so with version to avoid conflicts with OpenFst 1.8.1 on conda
 -                    )
--
--        endif()
-+        install(TARGETS fst
-+                LIBRARY
-+                    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-+                    COMPONENT kaldi
-+                    NAMELINK_SKIP # Link to so with version to avoid conflicts with OpenFst 1.8.2 on conda
++                    NAMELINK_SKIP # Link to so with version to avoid conflicts with OpenFst 1.8.1 on conda
 +                )
+ 
+-        endif()
  
      else() # Original functionality
  
 -- 
-2.35.3
+2.38.0
 
