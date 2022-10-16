@@ -40,7 +40,6 @@ source:
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
   sha256: 784bd5ca19733bb2ef271ceea9dbbd543668190c2269cbf42c50bd50dbd27cf8
   patches:
-    - patches/0004-Add-installable-kaldi-libs-package.patch
     - patches/0002-Remove-Windows-executables.patch
 
 build:

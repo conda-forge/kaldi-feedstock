@@ -93,8 +93,3 @@ cmake --install . --component kaldi --verbose --config Release
 
 popd
 
-pushd python_package
-
-python -m pip install . -vv
-
-popd

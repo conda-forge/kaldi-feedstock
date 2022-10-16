@@ -37,7 +37,3 @@ if %ERRORLEVEL% neq 0 exit 1
 
 cmake --install . --component kaldi --verbose --config Release
 if %ERRORLEVEL% neq 0 exit 1
-
-cd ../python_package
-
-python -m pip install . -vv
