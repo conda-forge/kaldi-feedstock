@@ -68,11 +68,7 @@ outputs:
         - m2-patch  # [win]
         - libtool   # [not win]
         - automake  # [not win]
-        - python                                 # [build_platform != target_platform]
-        - cross-python_{{ target_platform }}     # [build_platform != target_platform]
       host:
-        - python
-        - pip
         - icu
         - libblas
         - libcblas
@@ -82,7 +78,6 @@ outputs:
         - pthreads-win32  # [win]
         - zlib
       run:
-        - python
         - libblas
         - libcblas
         - liblapack
@@ -93,8 +88,6 @@ outputs:
       run_exports:
         - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
     test:
-      imports:
-        - kaldi_libs
       # will also run run_test.py (checking the binaries)
       commands:
         # libraries:
