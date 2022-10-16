@@ -22,7 +22,7 @@
     "util/basic-filebuf.h", "feat/feature-common.h", "tree/build-tree.h",
     "gmm/am-diag-gmm.h", "transform/cmvn.h",
     "fstext/context-fst.h", "hmm/hmm-utils.h", "lm/arpa-file-parser.h",
-    "decoder/grammar-fst.h", "lat/arctic-weight.h", "nnet/nnet-activation.h",
+    "decoder/grammar-fst.h", "lat/compose-lattice-pruned.h", "nnet/nnet-activation.h",
     "nnet2/am-nnet.h", "nnet3/attention.h", "rnnlm/sampler.h",
     "chain/chain-datastruct.h", "ivector/plda.h", "online2/online-endpoint.h",
     "kws/kaldi-kws.h", "itf/options-itf.h"
@@ -41,6 +41,7 @@ source:
   sha256: 784bd5ca19733bb2ef271ceea9dbbd543668190c2269cbf42c50bd50dbd27cf8
   patches:
     - patches/0002-Remove-Windows-executables.patch
+    - patches/0004-PyKaldi-compatibility.patch
 
 build:
   number: 0
