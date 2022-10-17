@@ -1,4 +1,4 @@
-From 89710d137da10b69fa6e7c94878cc7fba452f096 Mon Sep 17 00:00:00 2001
+From 57849f2e157cf8401782afeed61ee246f726a066 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Sun, 16 Oct 2022 13:12:32 -0700
 Subject: [PATCH] PyKaldi compatibility
@@ -11,7 +11,7 @@ Subject: [PATCH] PyKaldi compatibility
  src/cudamatrix/cu-matrix.cc                   |   8 +-
  src/cudamatrix/cu-matrix.h                    |  11 +-
  src/cudamatrix/cu-vector.cc                   |   3 +-
- src/cudamatrix/cu-vector.h                    |  23 +-
+ src/cudamatrix/cu-vector.h                    |  26 +-
  src/decoder/decodable-matrix.h                |   6 +-
  src/decoder/decoder-wrappers.cc               |  15 +
  src/decoder/grammar-fst.cc                    |   7 +
@@ -89,7 +89,7 @@ Subject: [PATCH] PyKaldi compatibility
  src/util/kaldi-io.h                           |   7 +-
  src/util/kaldi-table.h                        |  32 +++
  src/util/stl-utils.h                          |  15 +
- 85 files changed, 851 insertions(+), 422 deletions(-)
+ 85 files changed, 853 insertions(+), 423 deletions(-)
  rename src/{lat => fstext}/arctic-weight.h (97%)
 
 diff --git a/src/base/kaldi-error.cc b/src/base/kaldi-error.cc
@@ -287,7 +287,7 @@ index 8736782..9d7c256 100644
    // We could implement this directly, without using a temporary-- this can
    // be done later, when we have time.
 diff --git a/src/cudamatrix/cu-vector.h b/src/cudamatrix/cu-vector.h
-index f1c3275..b34c810 100644
+index f1c3275..35917d4 100644
 --- a/src/cudamatrix/cu-vector.h
 +++ b/src/cudamatrix/cu-vector.h
 @@ -79,7 +79,8 @@ class CuVectorBase {
@@ -300,15 +300,25 @@ index f1c3275..b34c810 100644
  
    template<typename OtherReal>
    void CopyFromVec(const VectorBase<OtherReal> &src);
-@@ -264,23 +265,26 @@ class CuVector: public CuVectorBase<Real> {
+@@ -99,7 +100,8 @@ class CuVectorBase {
+ 
+   void AddVec(Real alpha, const CuVectorBase<Real> &vec, Real beta = 1.0);
+ 
+-  template<typename OtherReal>
++  typename std::enable_if<!std::is_same<OtherReal, Real>::value>::type
++  AddVec(Real alpha, const CuVectorBase<OtherReal> &vec, Real beta = 1.0);
+   void AddVec(Real alpha, const CuVectorBase<OtherReal> &vec, Real beta = 1.0);
+ 
+   /// Sum the rows of the matrix, add to vector
+@@ -264,23 +266,26 @@ class CuVector: public CuVectorBase<Real> {
  
   public:
    CuVector() { }
 -  CuVector(MatrixIndexT dim, MatrixResizeType t = kSetZero) { Resize(dim, t); }
+-
+-  CuVector(const CuVectorBase<Real> &v);
 +  explicit CuVector(MatrixIndexT dim, MatrixResizeType t = kSetZero) { Resize(dim, t); }
  
--  CuVector(const CuVectorBase<Real> &v);
--
 -  CuVector(const VectorBase<Real> &v);
 -  explicit CuVector(const CuVector<Real> &v) : CuVectorBase<Real>() {
 +  CuVector(const CuVector<Real> &v) : CuVectorBase<Real>() {
@@ -334,7 +344,7 @@ index f1c3275..b34c810 100644
    explicit CuVector(const VectorBase<OtherReal> &v) : CuVectorBase<Real>() {
      Resize(v.Dim(), kUndefined);
      this->CopyFromVec(Vector<Real>(v));
-@@ -374,7 +378,8 @@ inline void AssertEqual(const CuVectorBase<Real> &a,
+@@ -374,7 +379,8 @@ inline void AssertEqual(const CuVectorBase<Real> &a,
  
  template<typename Real>
  template<typename OtherReal>
