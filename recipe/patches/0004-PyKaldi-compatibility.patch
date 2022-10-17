@@ -1,4 +1,4 @@
-From be9ef5dea1bd7c7045c3d3357d353c4e1e80653d Mon Sep 17 00:00:00 2001
+From ab4bf696f351c67a3990c533303a8d146f3d3e80 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Sun, 16 Oct 2022 13:12:32 -0700
 Subject: [PATCH] PyKaldi compatibility
@@ -1680,7 +1680,7 @@ index fcd6b82..58d6b0f 100644
        index_writer.Write(key, index_transducer);
  
 diff --git a/src/lat/determinize-lattice-pruned.cc b/src/lat/determinize-lattice-pruned.cc
-index dbdd9af..9fa9eaf 100644
+index dbdd9af..0d47ea7 100644
 --- a/src/lat/determinize-lattice-pruned.cc
 +++ b/src/lat/determinize-lattice-pruned.cc
 @@ -1344,6 +1344,12 @@ typename ArcTpl<Weight>::Label DeterminizeLatticeInsertPhones(
@@ -1690,7 +1690,7 @@ index dbdd9af..9fa9eaf 100644
 +// instantiate for type LatticeWeight
 +template
 +ArcTpl<kaldi::LatticeWeight>::Label DeterminizeLatticeInsertPhones(
-+    const kaldi::TransitionModel &trans_model,
++    const kaldi::TransitionInformation &trans_model,
 +    MutableFst<ArcTpl<kaldi::LatticeWeight> > *fst);
 +
  template<class Weight>
@@ -2272,7 +2272,7 @@ index 546176f..f913467 100644
    /// the reference to the argument component. Frees the previous
    /// ith component.
 diff --git a/src/online2/online-endpoint.cc b/src/online2/online-endpoint.cc
-index 2a1c03e..55ac7c5 100644
+index 2a1c03e..453a46c 100644
 --- a/src/online2/online-endpoint.cc
 +++ b/src/online2/online-endpoint.cc
 @@ -174,5 +174,22 @@ bool EndpointDetected<LatticeIncrementalOnlineDecoderTpl<fst::VectorGrammarFst >
@@ -2284,7 +2284,7 @@ index 2a1c03e..55ac7c5 100644
 +template
 +bool EndpointDetected<LatticeIncrementalOnlineDecoderTpl<fst::GrammarFst > >(
 +    const OnlineEndpointConfig &config,
-+    const TransitionModel &tmodel,
++    const TransitionInformation &tmodel,
 +    BaseFloat frame_shift_in_seconds,
 +    const LatticeIncrementalOnlineDecoderTpl<fst::GrammarFst > &decoder);
 +
@@ -2293,7 +2293,7 @@ index 2a1c03e..55ac7c5 100644
 +template
 +bool EndpointDetected<LatticeFasterOnlineDecoderTpl<fst::GrammarFst > >(
 +    const OnlineEndpointConfig &config,
-+    const TransitionModel &tmodel,
++    const TransitionInformation &tmodel,
 +    BaseFloat frame_shift_in_seconds,
 +    const LatticeFasterOnlineDecoderTpl<fst::GrammarFst > &decoder);
  
