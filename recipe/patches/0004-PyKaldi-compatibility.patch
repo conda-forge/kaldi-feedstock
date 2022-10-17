@@ -1,4 +1,4 @@
-From ff0d29945f9607cf0d4cd88bb94596703d393425 Mon Sep 17 00:00:00 2001
+From be9ef5dea1bd7c7045c3d3357d353c4e1e80653d Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Sun, 16 Oct 2022 13:12:32 -0700
 Subject: [PATCH] PyKaldi compatibility
@@ -389,7 +389,7 @@ index 94e141d..265a66c 100644
      likes_(likes), scale_(scale) { }
  
 diff --git a/src/decoder/decoder-wrappers.cc b/src/decoder/decoder-wrappers.cc
-index 626a693..70ab7f8 100644
+index 626a693..98dc11f 100644
 --- a/src/decoder/decoder-wrappers.cc
 +++ b/src/decoder/decoder-wrappers.cc
 @@ -442,6 +442,21 @@ template bool DecodeUtteranceLatticeFaster(
@@ -400,7 +400,7 @@ index 626a693..70ab7f8 100644
 +template bool DecodeUtteranceLatticeFaster(
 +    LatticeFasterDecoderTpl<fst::GrammarFst > &decoder,
 +    DecodableInterface &decodable,
-+    const TransitionModel &trans_model,
++    const TransitionInformation &trans_model,
 +    const fst::SymbolTable *word_syms,
 +    std::string utt,
 +    double acoustic_scale,
