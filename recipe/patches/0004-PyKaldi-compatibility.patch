@@ -1,4 +1,4 @@
-From ab4bf696f351c67a3990c533303a8d146f3d3e80 Mon Sep 17 00:00:00 2001
+From 914060ae90a360baa25210e6863d4b35d34d9a4c Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Sun, 16 Oct 2022 13:12:32 -0700
 Subject: [PATCH] PyKaldi compatibility
@@ -39,7 +39,7 @@ Subject: [PATCH] PyKaldi compatibility
  src/ivector/agglomerative-clustering.h        |   8 +-
  src/kws/kaldi-kws.h                           |   2 +-
  src/kws/kws-functions.h                       | 101 +++++++
- src/kws/kws-functions2.cc                     | 239 ++++++++++++++++
+ src/kws/kws-functions2.cc                     | 240 ++++++++++++++++
  src/kwsbin/kws-index-union.cc                 |  13 +-
  src/kwsbin/kws-search.cc                      | 258 ++++--------------
  src/kwsbin/lattice-to-kws-index.cc            |  88 +-----
@@ -89,7 +89,7 @@ Subject: [PATCH] PyKaldi compatibility
  src/util/kaldi-io.h                           |   7 +-
  src/util/kaldi-table.h                        |  32 +++
  src/util/stl-utils.h                          |  15 +
- 85 files changed, 854 insertions(+), 424 deletions(-)
+ 85 files changed, 855 insertions(+), 424 deletions(-)
  rename src/{lat => fstext}/arctic-weight.h (97%)
 
 diff --git a/src/base/kaldi-error.cc b/src/base/kaldi-error.cc
@@ -994,13 +994,14 @@ index 1558285..cef0466 100644
  } // namespace kaldi
  
 diff --git a/src/kws/kws-functions2.cc b/src/kws/kws-functions2.cc
-index 71f5583..f96a565 100644
+index 71f5583..4dde838 100644
 --- a/src/kws/kws-functions2.cc
 +++ b/src/kws/kws-functions2.cc
-@@ -137,4 +137,243 @@ void OptimizeFactorTransducer(KwsLexicographicFst *index_transducer,
+@@ -137,4 +137,244 @@ void OptimizeFactorTransducer(KwsLexicographicFst *index_transducer,
    Decode(index_transducer, encoder);
  }
  
++bool LatticeToKwsIndex(const CompactLattice &clat,
 +                       int32 utterance_id,
 +                       int32 max_silence_frames,
 +                       int32 max_states,
