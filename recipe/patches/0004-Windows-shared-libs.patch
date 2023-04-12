@@ -1,13 +1,25 @@
-diff --git CMakeLists.txt CMakeLists.txt
-index 886af19..ebed54f 100644
---- CMakeLists.txt
-+++ CMakeLists.txt
+diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
+index c8fee4c..5e957bb 100644
+--- a/cmake/gen_cmake_skeleton.py
++++ b/cmake/gen_cmake_skeleton.py
+@@ -154,6 +154,7 @@ def disable_for_win32(t):
+         "online-audio-client",
+         "online-net-client",
+         "online2-tcp-nnet3-decode-faster",
++        "online2-tcp-nnet3-decode-faster-emscripten",
+         "online-server-gmm-decode-faster",
+         "online-audio-server-decode-faster"
+     ]
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 886af19..84fd01b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
 @@ -22,7 +22,6 @@ endif()
- 
+
  include(third_party/get_third_party)
- 
+
 -include(cmake/third_party/openfst.cmake)
- 
+
  find_package(PythonInterp)
  if(NOT PYTHON_EXECUTABLE)
 @@ -50,7 +49,7 @@ if(BUILD_SHARED_LIBS)
@@ -19,3 +31,13 @@ index 886af19..ebed54f 100644
      elseif(APPLE)
          set(CMAKE_INSTALL_RPATH "@loader_path")
      else()
+@@ -285,8 +284,8 @@ add_subdirectory(src/chainbin)
+ add_subdirectory(src/ivectorbin)
+ if(NOT MSVC)
+     add_subdirectory(src/onlinebin)
+-    add_subdirectory(src/online2bin)
+ endif()
++add_subdirectory(src/online2bin)
+ add_subdirectory(src/kwsbin)
+
+ # add all cuda executables
