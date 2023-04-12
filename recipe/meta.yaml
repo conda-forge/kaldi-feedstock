@@ -79,13 +79,14 @@ outputs:
         - magma           # [cuda_compiler_version != "None"]
         - pthreads-win32  # [win]
         - zlib
+        - openfst
       run:
         - libblas
         - libcblas
         - liblapack
         - liblapacke
         - magma    # [cuda_compiler_version != "None"]
-        - openfst  # [not win and build_platform == target_platform]
+        - openfst
         - ucrt     # [win]
       run_exports:
         - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
