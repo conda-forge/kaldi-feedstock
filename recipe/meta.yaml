@@ -1,15 +1,15 @@
-{% set version = "5.5.1016" %}
+{% set version = "5.5.1068" %}
 # minor/major is https://github.com/kaldi-asr/kaldi/blob/master/src/.version;
 # patch version is the number of commits since then, see
 # https://github.com/kaldi-asr/kaldi/blob/master/cmake/VersionHelper.cmake
-{% set commit = "5a37217e107bc9cb5e4e1ad2b290cecbdedfa799" %}
+{% set commit = "59299d1cf95b72bb109d583947d9e9ece19aa6dc" %}
 {% set kaldi_proc_type = "cuda" if cuda_compiler_version != "None" else "cpu" %}
 
 {% set kaldi_libraries = [
     "base", "matrix", "cudamatrix", "util", "feat", "tree", "gmm", "transform",
     "fstext", "hmm", "lm", "decoder", "lat", "nnet", "nnet2", "nnet3",
     "rnnlm", "chain", "ivector", "online2", "kws"
-] + (cuda_compiler_version != "None") * [
+] + (cuda_compiler_version is defined and cuda_compiler_version != "None") * [
     "cudafeat", "cudadecoder"
 ] + (not win) * [
     "online"
@@ -38,13 +38,15 @@ package:
 
 source:
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
-  sha256: 153ae41654046f1997c247d3328c17124745b70be090fe1ee73442160e7b08c7
+  sha256: aae30bb72ca2522eeec6582aaad092b4188fa17af33acb9a8d970419151edbd6
   patches:
-    - patches/0001-Update-cmake.patch
-    - patches/0002-Remove-Windows-executables.patch
+    #- patches/0001-Update-cmake.patch
+    #- patches/0002-Remove-Windows-executables.patch
+    - patches/0003-OpenFst-182-support.patch  # Patch based on https://github.com/kaldi-asr/kaldi/pull/4829
+    - patches/0004-Windows-shared-libs.patch
 
 build:
-  number: 4
+  number: 0
   skip: true  # [cuda_compiler_version == "10.2"]
 
 requirements:

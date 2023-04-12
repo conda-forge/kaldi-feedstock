@@ -1,0 +1,21 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 886af19..ebed54f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -22,7 +22,6 @@ endif()
+ 
+ include(third_party/get_third_party)
+ 
+-include(cmake/third_party/openfst.cmake)
+ 
+ find_package(PythonInterp)
+ if(NOT PYTHON_EXECUTABLE)
+@@ -50,7 +49,7 @@ if(BUILD_SHARED_LIBS)
+     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+     if(WIN32)
+         set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+-        message(FATAL_ERROR "DLL is not supported currently")
++        #message(FATAL_ERROR "DLL is not supported currently")
+     elseif(APPLE)
+         set(CMAKE_INSTALL_RPATH "@loader_path")
+     else()
