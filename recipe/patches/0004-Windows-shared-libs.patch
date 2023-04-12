@@ -11,18 +11,26 @@ index c8fee4c..5e957bb 100644
          "online-audio-server-decode-faster"
      ]
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 886af19..84fd01b 100644
+index 886af19..2200f09 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -22,7 +22,6 @@ endif()
-
+ 
  include(third_party/get_third_party)
-
+ 
 -include(cmake/third_party/openfst.cmake)
-
+ 
  find_package(PythonInterp)
  if(NOT PYTHON_EXECUTABLE)
-@@ -50,7 +49,7 @@ if(BUILD_SHARED_LIBS)
+@@ -43,14 +42,14 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE}
+ )
+ unset(IS_LIB_SHARE)
+ 
+-set(CMAKE_CXX_STANDARD 14)
++set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_EXTENSIONS OFF)
+ set(CMAKE_INSTALL_MESSAGE LAZY) # hide "-- Up-to-date: ..."
+ if(BUILD_SHARED_LIBS)
      set(CMAKE_POSITION_INDEPENDENT_CODE ON)
      if(WIN32)
          set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -39,5 +47,5 @@ index 886af19..84fd01b 100644
  endif()
 +add_subdirectory(src/online2bin)
  add_subdirectory(src/kwsbin)
-
+ 
  # add all cuda executables
