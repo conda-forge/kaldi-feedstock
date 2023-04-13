@@ -6294,20 +6294,19 @@ index e697de6..3ae649e 100644
      const char *usage =
          "Extract iVectors for utterances every --ivector-period frames, using a trained\n"
 diff --git a/src/online2bin/online2-tcp-nnet3-decode-faster-emscripten.cc b/src/online2bin/online2-tcp-nnet3-decode-faster-emscripten.cc
-index 7a7f795..b1002fe 100644
+index 7a7f795..e8c60e3 100644
 --- a/src/online2bin/online2-tcp-nnet3-decode-faster-emscripten.cc
 +++ b/src/online2bin/online2-tcp-nnet3-decode-faster-emscripten.cc
-@@ -198,8 +198,7 @@ class OnlineASR {
+@@ -198,8 +198,6 @@ class OnlineASR {
  #ifndef __EMSCRIPTEN__
  
  int main(int argc, const char* const* argv) {
 -  using kaldi::int32;
 -  using kaldi::int64;
-+  using int64;
    using kaldi::OnlineASR;
    using kaldi::OnlineASROptionParser;
    using kaldi::Vector;
-@@ -262,13 +261,12 @@ int main(int argc, const char* const* argv) {
+@@ -262,13 +260,12 @@ int main(int argc, const char* const* argv) {
  #include <iterator>
  
  using std::vector;
