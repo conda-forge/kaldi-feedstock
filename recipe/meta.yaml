@@ -80,6 +80,7 @@ outputs:
         - pthreads-win32  # [win]
         - zlib
         - openfst
+        - dlfcn-win32  # [win]
       run:
         - libblas
         - libcblas
