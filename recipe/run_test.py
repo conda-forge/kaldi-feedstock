@@ -255,118 +255,6 @@ online2_bins="""online2-wav-gmm-latgen-faster apply-cmvn-online
      online2-tcp-nnet3-decode-faster online2-wav-nnet3-latgen-incremental
      online2-wav-nnet3-wake-word-decoder-faster"""
 
-headers = {'base': "io-funcs-inl.h  io-funcs.h  kaldi-common.h  kaldi-error.h  kaldi-math.h  kaldi-types.h  kaldi-utils.h  timer.h",
-           'chain': """chain-datastruct.h  chain-denominator.h        chain-kernels-ansi.h  chain-supervision.h  language-model.h
-chain-den-graph.h   chain-generic-numerator.h  chain-numerator.h     chain-training.h""",
-           'cudamatrix': """cu-allocator.h     cu-common.h             cu-kernels.h     cu-matrix.h         cu-sp-matrix.h      cu-vector.h
-cu-array-inl.h     cu-compressed-matrix.h  cu-math.h        cu-matrixdim.h      cu-sparse-matrix.h  cublas-wrappers.h
-cu-array.h         cu-device.h             cu-matrix-inl.h  cu-packed-matrix.h  cu-tp-matrix.h
-cu-block-matrix.h  cu-kernels-ansi.h       cu-matrix-lib.h  cu-rand.h           cu-value.h""",
-           'decoder': """biglm-faster-decoder.h  decoder-wrappers.h              lattice-faster-decoder.h              lattice-simple-decoder.h
-decodable-mapped.h      faster-decoder.h                lattice-faster-online-decoder.h       simple-decoder.h
-decodable-matrix.h      grammar-fst.h                   lattice-incremental-decoder.h         training-graph-compiler.h
-decodable-sum.h         lattice-biglm-faster-decoder.h  lattice-incremental-online-decoder.h""",
-           'feat': """feature-common-inl.h  feature-functions.h  feature-spectrogram.h  online-feature.h   signal.h
-feature-common.h      feature-mfcc.h       feature-window.h       pitch-functions.h  wave-reader.h
-feature-fbank.h       feature-plp.h        mel-computations.h     resample.h""",
-           'fstext': """context-fst.h              epsilon-property.h     kaldi-fst-io-inl.h     prune-special.h
-deterministic-fst-inl.h    factor-inl.h           kaldi-fst-io.h         push-special.h
-deterministic-fst.h        factor.h               lattice-utils-inl.h    rand-fst.h
-determinize-lattice-inl.h  fst-test-utils.h       lattice-utils.h        remove-eps-local-inl.h
-determinize-lattice.h      fstext-lib.h           lattice-weight.h       remove-eps-local.h
-determinize-star-inl.h     fstext-utils-inl.h     pre-determinize-inl.h  table-matcher.h
-determinize-star.h         fstext-utils.h         pre-determinize.h      trivial-factor-weight.h
-epsilon-property-inl.h     grammar-context-fst.h  prune-special-inl.h""",
-           'gmm': """am-diag-gmm.h            diag-gmm-normal.h  full-gmm-inl.h     indirect-diff-diag-gmm.h  mle-full-gmm.h
-decodable-am-diag-gmm.h  diag-gmm.h         full-gmm-normal.h  mle-am-diag-gmm.h         model-common.h
-diag-gmm-inl.h           ebw-diag-gmm.h     full-gmm.h         mle-diag-gmm.h            model-test-common.h""",
-           'hmm': """hmm-test-utils.h  hmm-topology.h  hmm-utils.h  posterior.h  transition-model.h  tree-accu.h""",
-           'itf': """clusterable-itf.h  decodable-itf.h       optimizable-itf.h  transition-information.h
-context-dep-itf.h  online-feature-itf.h  options-itf.h""",
-           'ivector': """agglomerative-clustering.h  ivector-extractor.h  logistic-regression.h  plda.h  voice-activity-detection.h""",
-           'kws': """kaldi-kws.h  kws-functions.h  kws-scoring.h""",
-           'lat': """arctic-weight.h               kaldi-lattice.h                       phone-align-lattice.h         word-align-lattice.h
-compose-lattice-pruned.h      lattice-functions-transition-model.h  push-lattice.h
-confidence.h                  lattice-functions.h                   sausages.h
-determinize-lattice-pruned.h  minimize-lattice.h                    word-align-lattice-lexicon.h""",
-           'lm': """arpa-file-parser.h  arpa-lm-compiler.h  const-arpa-lm.h  kaldi-rnnlm.h  mikolov-rnnlm-lib.h""",
-           'matrix': """cblas-wrappers.h     kaldi-blas.h        kaldi-vector.h          matrix-lib.h     sp-matrix-inl.h  tp-matrix.h
-compressed-matrix.h  kaldi-matrix-inl.h  matrix-common.h         numpy-array.h    sp-matrix.h
-jama-eig.h           kaldi-matrix.h      matrix-functions-inl.h  optimization.h   sparse-matrix.h
-jama-svd.h           kaldi-vector-inl.h  matrix-functions.h      packed-matrix.h  srfft.h""",
-           'nnet': """nnet-activation.h                 nnet-loss.h                   nnet-randomizer.h
-nnet-affine-transform.h           nnet-lstm-projected.h         nnet-rbm.h
-nnet-average-pooling-component.h  nnet-matrix-buffer.h          nnet-recurrent.h
-nnet-blstm-projected.h            nnet-max-pooling-component.h  nnet-sentence-averaging-component.h
-nnet-component.h                  nnet-multibasis-component.h   nnet-trnopts.h
-nnet-convolutional-component.h    nnet-nnet.h                   nnet-utils.h
-nnet-frame-pooling-component.h    nnet-parallel-component.h     nnet-various.h
-nnet-kl-hmm.h                     nnet-parametric-relu.h
-nnet-linear-transform.h           nnet-pdf-prior.h""",
-           'nnet2': """am-nnet.h                nnet-compute-discriminative-parallel.h  nnet-limit-rank.h           rescale-nnet.h
-combine-nnet-a.h         nnet-compute-discriminative.h           nnet-nnet.h                 shrink-nnet.h
-combine-nnet-fast.h      nnet-compute-online.h                   nnet-precondition-online.h  train-nnet-ensemble.h
-combine-nnet.h           nnet-compute.h                          nnet-precondition.h         train-nnet.h
-decodable-am-nnet.h      nnet-example-functions.h                nnet-stats.h                widen-nnet.h
-get-feature-transform.h  nnet-example.h                          nnet-update-parallel.h
-mixup-nnet.h             nnet-fix.h                              nnet-update.h
-nnet-component.h         nnet-functions.h                        online-nnet2-decodable.h""",
-           'nnet3': """am-nnet-simple.h              nnet-batch-compute.h       nnet-computation-graph.h           nnet-graph.h
-attention.h                   nnet-chain-diagnostics.h   nnet-computation.h                 nnet-nnet.h
-convolution.h                 nnet-chain-diagnostics2.h  nnet-compute.h                     nnet-normalize-component.h
-decodable-batch-looped.h      nnet-chain-example.h       nnet-convolutional-component.h     nnet-optimize-utils.h
-decodable-online-looped.h     nnet-chain-training.h      nnet-descriptor.h                  nnet-optimize.h
-decodable-simple-looped.h     nnet-chain-training2.h     nnet-diagnostics.h                 nnet-parse.h
-discriminative-supervision.h  nnet-combined-component.h  nnet-discriminative-diagnostics.h  nnet-simple-component.h
-discriminative-training.h     nnet-common.h              nnet-discriminative-example.h      nnet-test-utils.h
-natural-gradient-online.h     nnet-compile-looped.h      nnet-discriminative-training.h     nnet-training.h
-nnet-am-decodable-simple.h    nnet-compile-utils.h       nnet-example-utils.h               nnet-utils.h
-nnet-analyze.h                nnet-compile.h             nnet-example.h
-nnet-attention-component.h    nnet-component-itf.h       nnet-general-component.h""",
-           'online': """online-audio-source.h  online-faster-decoder.h  online-tcp-source.h
-online-decodable.h     online-feat-input.h      onlinebin-util.h""",
-           'online2': """online-endpoint.h          online-ivector-feature.h          online-nnet3-decoding.h                  online-timing.h
-online-feature-pipeline.h  online-nnet2-decoding-threaded.h  online-nnet3-incremental-decoding.h      onlinebin-util.h
-online-gmm-decodable.h     online-nnet2-decoding.h           online-nnet3-wake-word-faster-decoder.h
-online-gmm-decoding.h      online-nnet2-feature-pipeline.h   online-speex-wrapper.h""",
-           'rnnlm': """rnnlm-compute-state.h  rnnlm-embedding-training.h  rnnlm-lattice-rescoring.h  rnnlm-utils.h           sampling-lm.h
-rnnlm-core-compute.h   rnnlm-example-utils.h       rnnlm-test-utils.h         sampler.h
-rnnlm-core-training.h  rnnlm-example.h             rnnlm-training.h           sampling-lm-estimate.h""",
-           'transform': """basis-fmllr-diag-gmm.h           fmllr-diag-gmm.h  lvtln.h                   regtree-mllr-diag-gmm.h
-cmvn.h                           fmllr-raw.h       mllt.h                    transform-common.h
-compressed-transform-stats.h     fmpe.h            regression-tree.h
-decodable-am-diag-gmm-regtree.h  lda-estimate.h    regtree-fmllr-diag-gmm.h""",
-           'tree': """build-tree-questions.h  build-tree.h     clusterable-classes.h  event-map.h
-build-tree-utils.h      cluster-utils.h  context-dep.h          tree-renderer.h""",
-           'util': """basic-filebuf.h          edit-distance.h        kaldi-holder.h     kaldi-table-inl.h  simple-options.h
-common-utils.h           hash-list-inl.h        kaldi-io-inl.h     kaldi-table.h      stl-utils.h
-const-integer-set-inl.h  hash-list.h            kaldi-io.h         kaldi-thread.h     table-types.h
-const-integer-set.h      kaldi-cygwin-io-inl.h  kaldi-pipebuf.h    parse-options.h    text-utils.h
-edit-distance-inl.h      kaldi-holder-inl.h     kaldi-semaphore.h  simple-io-funcs.h""",
-           }
-
-libraries = """libkaldi-base        libkaldi-gmm         libkaldi-matrix      libkaldi-rnnlm
-libkaldi-chain       libkaldi-hmm         libkaldi-nnet
-libkaldi-cudamatrix  libkaldi-ivector     libkaldi-nnet2       libkaldi-transform
-libkaldi-decoder     libkaldi-kws         libkaldi-nnet3       libkaldi-tree
-libkaldi-feat        libkaldi-lat         libkaldi-online      libkaldi-util
-libkaldi-fstext      libkaldi-lm          libkaldi-online2"""
-
-if test_cuda:
-    headers['cudadecoder'] = """batched-static-nnet3-kernels.h                 cuda-decoder-common.h                   cuda-pipeline-common.h
-batched-static-nnet3.h                         cuda-decoder-kernels-utils.h            decodable-cumatrix.h
-batched-threaded-nnet3-cuda-online-pipeline.h  cuda-decoder-kernels.h                  lattice-postprocessor.h
-batched-threaded-nnet3-cuda-pipeline.h         cuda-decoder.h                          thread-pool-light.h
-batched-threaded-nnet3-cuda-pipeline2.h        cuda-fst.h                              thread-pool.h
-cuda-decodable-itf.h                           cuda-online-pipeline-dynamic-batcher.h"""
-    headers['cudafeat'] = """feature-online-batched-cmvn-cuda-kernels.h      feature-spectral-cuda.h
-feature-online-batched-cmvn-cuda.h              feature-window-cuda.h
-feature-online-batched-ivector-cuda-kernels.h   lane-desc.h
-feature-online-batched-ivector-cuda.h           online-batched-feature-pipeline-cuda.h
-feature-online-batched-spectral-cuda-kernels.h  online-cuda-feature-pipeline.h
-feature-online-batched-spectral-cuda.h          online-ivector-feature-cuda-kernels.h
-feature-online-cmvn-cuda.h                      online-ivector-feature-cuda.h"""
-    libraries += """ libkaldi-cudafeat libkaldi-cudadecoder"""
 
 if __name__ == '__main__':
     check_outputs(bins)
@@ -382,6 +270,7 @@ if __name__ == '__main__':
     check_outputs(nnet2_bins)
     check_outputs(nnet3_bins)
     check_outputs(rnnlm_bins)
+    check_outputs(online2_bins)
 
     if test_cuda:
         check_outputs(cuda_decoder_bins)
@@ -389,14 +278,3 @@ if __name__ == '__main__':
 
     if sys.platform != 'win32':
         check_outputs(online_bins)
-        check_outputs(online2_bins)
-
-    print("Currently skipping header checks!")
-    for k, v in headers.items():
-        continue
-        if sys.platform == 'win32' and k in ['online', 'online2']:
-            continue
-        check_headers(k, v)
-
-    if sys.platform != 'win32':
-        check_libraries(libraries)
