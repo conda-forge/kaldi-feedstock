@@ -552,6 +552,19 @@ index 5f25131..d08ff93 100644
    fst::Project(ofst, fst::PROJECT_OUTPUT);  // The words are on the output side
    fst::Relabel(ofst, wildcards, wildcards);
    fst::RmEpsilon(ofst);   // Don't tolerate epsilons as they make it hard to
+diff --git a/src/onlinebin/online-audio-server-decode-faster.cc b/src/onlinebin/online-audio-server-decode-faster.cc
+index 43a2fa7..91b13cf 100644
+--- a/src/onlinebin/online-audio-server-decode-faster.cc
++++ b/src/onlinebin/online-audio-server-decode-faster.cc
+@@ -65,7 +65,7 @@ bool WriteLine(int32 socket, std::string line);
+ const float kFramesPerSecond = 100.0f;
+ }  // namespace kaldi
+ 
+-int32 main(int argc, char *argv[]) {
++int main(int argc, char *argv[]) {
+   using namespace kaldi;
+   using namespace fst;
+ 
 diff --git a/src/util/kaldi-thread.h b/src/util/kaldi-thread.h
 index 29cfaee..8d60030 100644
 --- a/src/util/kaldi-thread.h
