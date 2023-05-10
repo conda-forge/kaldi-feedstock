@@ -1,5 +1,5 @@
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index c8fee4c..623e6e0 100644
+index c8fee4c..f944def 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
 @@ -154,6 +154,7 @@ def disable_for_win32(t):
@@ -14,7 +14,7 @@ index c8fee4c..623e6e0 100644
              ret.append("    cuda_compile(CUDA_OBJS SHARED")
              for f in self.cuda_source_list:
                  ret.append("        " + f)
-+            if self.dir_name.startswith("cudafeat"):
++            if self.dir_name.startswith("cudafeat") and sys.platform == 'win32':
 +                ret.append("    OPTIONS -DKALDI_CUMATRIX_DLL_IMPORTS")
              ret.append("    )")
              ret.append("endif()\n")
