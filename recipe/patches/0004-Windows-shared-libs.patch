@@ -1,5 +1,5 @@
 diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
-index c8fee4c..f944def 100644
+index c8fee4c..f1a92b7 100644
 --- a/cmake/gen_cmake_skeleton.py
 +++ b/cmake/gen_cmake_skeleton.py
 @@ -154,6 +154,7 @@ def disable_for_win32(t):
@@ -10,7 +10,18 @@ index c8fee4c..f944def 100644
          "online-server-gmm-decode-faster",
          "online-audio-server-decode-faster"
      ]
-@@ -252,6 +253,8 @@ class CMakeListsLibrary(object):
+@@ -239,6 +240,10 @@ class CMakeListsLibrary(object):
+     def gen_code(self):
+         ret = []
+ 
++        if sys.platform == 'win32' and self.dir_name.startswith("online"):
++            self.header_list = [x for x in self.header_list if x != 'online-tcp-source.h']
++            self.source_list = [x for x in self.source_list if x != 'online-tcp-source.cc']
++
+         if len(self.header_list) > 0:
+             ret.append("set(PUBLIC_HEADERS")
+             for f in self.header_list:
+@@ -252,6 +257,8 @@ class CMakeListsLibrary(object):
              ret.append("    cuda_compile(CUDA_OBJS SHARED")
              for f in self.cuda_source_list:
                  ret.append("        " + f)
@@ -19,7 +30,7 @@ index c8fee4c..f944def 100644
              ret.append("    )")
              ret.append("endif()\n")
  
-@@ -266,6 +269,27 @@ class CMakeListsLibrary(object):
+@@ -266,6 +273,27 @@ class CMakeListsLibrary(object):
          ret.append("     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>")
          ret.append("     $<INSTALL_INTERFACE:include/kaldi>")
          ret.append(")\n")
@@ -48,7 +59,7 @@ index c8fee4c..f944def 100644
          if len(self.depends) > 0:
              ret.append("target_link_libraries(" + self.target_name + " PUBLIC")
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 886af19..d779cd4 100644
+index 886af19..24cb574 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -22,7 +22,6 @@ endif()
@@ -92,12 +103,26 @@ index 886af19..d779cd4 100644
      set(CUDA_NVCC_FLAGS ${KALDI_CUDA_NVCC_FLAGS} ${CUDA_NVCC_FLAGS})
  
      add_definitions(-DHAVE_CUDA=1)
-@@ -285,8 +292,8 @@ add_subdirectory(src/chainbin)
+@@ -251,9 +258,7 @@ add_subdirectory(src/nnet3)
+ add_subdirectory(src/rnnlm)
+ add_subdirectory(src/chain)
+ add_subdirectory(src/ivector)
+-if(NOT MSVC)
+-    add_subdirectory(src/online)
+-endif()
++add_subdirectory(src/online)
+ add_subdirectory(src/online2)
+ add_subdirectory(src/kws)
+ 
+@@ -283,10 +288,8 @@ add_subdirectory(src/nnet3bin)
+ add_subdirectory(src/rnnlmbin)
+ add_subdirectory(src/chainbin)
  add_subdirectory(src/ivectorbin)
- if(NOT MSVC)
-     add_subdirectory(src/onlinebin)
+-if(NOT MSVC)
+-    add_subdirectory(src/onlinebin)
 -    add_subdirectory(src/online2bin)
- endif()
+-endif()
++add_subdirectory(src/onlinebin)
 +add_subdirectory(src/online2bin)
  add_subdirectory(src/kwsbin)
  

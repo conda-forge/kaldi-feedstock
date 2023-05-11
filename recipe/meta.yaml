@@ -8,12 +8,10 @@
 {% set kaldi_libraries = [
     "base", "matrix", "cudamatrix", "util", "feat", "tree", "gmm", "transform",
     "fstext", "hmm", "lm", "decoder", "lat", "nnet", "nnet2", "nnet3",
-    "rnnlm", "chain", "ivector", "online2", "kws"
+    "rnnlm", "chain", "ivector", "online", "online2", "kws"
 ] + (cuda_compiler_version is defined and cuda_compiler_version != "None") * [
     "cudafeat", "cudadecoder"
-] + (not win) * [
-    "online"
-] %}
+]%}
 # This list should be substantially longer, but upstream just globs
 # all *.h files. These are just stand-ins (one header per folder),
 # but relevant headers can be added as needed/desired.
@@ -24,12 +22,10 @@
     "fstext/context-fst.h", "hmm/hmm-utils.h", "lm/arpa-file-parser.h",
     "decoder/grammar-fst.h", "lat/arctic-weight.h", "nnet/nnet-activation.h",
     "nnet2/am-nnet.h", "nnet3/attention.h", "rnnlm/sampler.h",
-    "chain/chain-datastruct.h", "ivector/plda.h", "online2/online-endpoint.h",
-    "kws/kaldi-kws.h", "itf/options-itf.h"
+    "chain/chain-datastruct.h", "ivector/plda.h", "online/online-decodable.h",
+    "online2/online-endpoint.h", "kws/kaldi-kws.h", "itf/options-itf.h"
 ] + (cuda_compiler_version != "None") * [
     "cudafeat/lane-desc.h", "cudadecoder/cuda-fst.h"
-] + (not win) * [
-    "online/online-decodable.h"
 ] %}
 
 package:
@@ -40,13 +36,12 @@ source:
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
   sha256: aae30bb72ca2522eeec6582aaad092b4188fa17af33acb9a8d970419151edbd6
   patches:
-    #- patches/0001-Update-cmake.patch
-    #- patches/0002-Remove-Windows-executables.patch
     - patches/0003-OpenFst-182-support.patch  # Patch based on https://github.com/kaldi-asr/kaldi/pull/4829
     - patches/0004-Windows-shared-libs.patch
 
 build:
   number: 0
+  # Bug in for cuda 11.1 with c++17 on linux: https://forums.developer.nvidia.com/t/nvc-20-9-fails-to-compile-code-instantiating-any-std-tuple-with-gcc-10-2-on-c-17/160987
   skip: true  # [cuda_compiler_version == "10.2" or (linux and cuda_compiler_version == "11.1")]
 
 requirements:
@@ -99,8 +94,6 @@ outputs:
             # shared
             - test -f $PREFIX/lib/libkaldi-{{ each_lib }}.so               # [linux]
             - test -f $PREFIX/lib/libkaldi-{{ each_lib }}.dylib            # [osx]
-            # windows doesn't yet build dynamic libs
-            - if not exist %LIBRARY_BIN%\kaldi-{{ each_lib }}.dll exit 1   # [win]
             - if not exist %LIBRARY_LIB%\kaldi-{{ each_lib }}.lib exit 1   # [win]
 
             # absence of static libraries
