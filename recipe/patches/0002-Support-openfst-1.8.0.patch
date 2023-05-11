@@ -1,0 +1,53 @@
+From f9ed1f1b515efd467c03052b297db3011a3fbf77 Mon Sep 17 00:00:00 2001
+From: Yuriy Chernyshov <thegeorg@yandex-team.com>
+Date: Thu, 23 Feb 2023 21:24:12 +0300
+Subject: [PATCH 2/5] Support openfst-1.8.0
+
+---
+ src/fstext/fstext-utils-inl.h  | 2 +-
+ src/fstext/fstext-utils.h      | 2 +-
+ src/fstext/lattice-utils-inl.h | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/fstext/fstext-utils-inl.h b/src/fstext/fstext-utils-inl.h
+index d877c03e1..44e641a3f 100644
+--- a/src/fstext/fstext-utils-inl.h
++++ b/src/fstext/fstext-utils-inl.h
+@@ -163,7 +163,7 @@ void RemoveSomeInputSymbols(const std::vector<I> &to_remove,
+                             MutableFst<Arc> *fst) {
+   KALDI_ASSERT_IS_INTEGER_TYPE(I);
+   RemoveSomeInputSymbolsMapper<Arc, I> mapper(to_remove);
+-  Map(fst, mapper);
++  ArcMap(fst, mapper);
+ }
+ 
+ template<class Arc, class I>
+diff --git a/src/fstext/fstext-utils.h b/src/fstext/fstext-utils.h
+index 5789dbe7c..db14ddd35 100644
+--- a/src/fstext/fstext-utils.h
++++ b/src/fstext/fstext-utils.h
+@@ -113,7 +113,7 @@ void PushInLog(VectorFst<StdArc> *fst, uint32 ptype, float delta = kDelta) {
+ template<class Arc>
+ void MinimizeEncoded(VectorFst<Arc> *fst, float delta = kDelta) {
+ 
+-  Map(fst, QuantizeMapper<Arc>(delta));
++  ArcMap(fst, QuantizeMapper<Arc>(delta));
+   EncodeMapper<Arc> encoder(kEncodeLabels | kEncodeWeights, ENCODE);
+   Encode(fst, &encoder);
+   internal::AcceptorMinimize(fst);
+diff --git a/src/fstext/lattice-utils-inl.h b/src/fstext/lattice-utils-inl.h
+index c97a538dd..5d52ed3aa 100644
+--- a/src/fstext/lattice-utils-inl.h
++++ b/src/fstext/lattice-utils-inl.h
+@@ -268,7 +268,7 @@ void ConvertFstToLattice(
+     MutableFst<ArcTpl<LatticeWeightTpl<Real> > > *ofst) {
+   int32 num_states_cache = 50000;
+   fst::CacheOptions cache_opts(true, num_states_cache);
+-  fst::MapFstOptions mapfst_opts(cache_opts);
++  fst::ArcMapFstOptions mapfst_opts(cache_opts);
+   StdToLatticeMapper<Real> mapper;
+   MapFst<StdArc, ArcTpl<LatticeWeightTpl<Real> >,
+          StdToLatticeMapper<Real> > map_fst(ifst, mapper, mapfst_opts);
+-- 
+2.30.0.windows.2
+

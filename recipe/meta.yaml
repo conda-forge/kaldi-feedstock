@@ -36,8 +36,12 @@ source:
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
   sha256: aae30bb72ca2522eeec6582aaad092b4188fa17af33acb9a8d970419151edbd6
   patches:
-    - patches/0003-OpenFst-182-support.patch  # Patch based on https://github.com/kaldi-asr/kaldi/pull/4829
-    - patches/0004-Windows-shared-libs.patch
+    # Patches based on https://github.com/kaldi-asr/kaldi/pull/4829
+    - patches/0001-Support-openfst-1.7.6.patch
+    - patches/0002-Support-openfst-1.8.0.patch
+    - patches/0003-Support-openfst-1.8.1.patch
+    - patches/0004-Support-openfst-1.8.2.patch
+    - patches/0005-Shared-libraries-on-windows.patch
 
 build:
   number: 0
