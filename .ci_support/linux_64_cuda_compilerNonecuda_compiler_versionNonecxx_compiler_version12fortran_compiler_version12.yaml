@@ -5,19 +5,19 @@ channel_sources:
 channel_targets:
 - conda-forge main
 cuda_compiler:
-- nvcc
+- None
 cuda_compiler_version:
 - None
 cxx_compiler:
 - gxx
 cxx_compiler_version:
-- '11'
+- '12'
 docker_image:
 - quay.io/condaforge/linux-anvil-cos7-x86_64
 fortran_compiler:
 - gfortran
 fortran_compiler_version:
-- '11'
+- '12'
 icu:
 - '72'
 libblas:
@@ -33,6 +33,7 @@ target_platform:
 zip_keys:
 - - cxx_compiler_version
   - fortran_compiler_version
+  - cuda_compiler
   - cuda_compiler_version
   - cdt_name
   - docker_image
