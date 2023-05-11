@@ -98,6 +98,7 @@ outputs:
             # shared
             - test -f $PREFIX/lib/libkaldi-{{ each_lib }}.so               # [linux]
             - test -f $PREFIX/lib/libkaldi-{{ each_lib }}.dylib            # [osx]
+            - if not exist %LIBRARY_BIN%\kaldi-{{ each_lib }}.dll exit 1   # [win]
             - if not exist %LIBRARY_LIB%\kaldi-{{ each_lib }}.lib exit 1   # [win]
 
             # absence of static libraries

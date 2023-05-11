@@ -228,29 +228,22 @@ nnet3_bins = """nnet3-init nnet3-info nnet3-get-egs nnet3-copy-egs nnet3-subset-
 rnnlm_bins = """rnnlm-get-egs rnnlm-train rnnlm-get-sampling-lm
            rnnlm-get-word-embedding rnnlm-compute-prob rnnlm-sentence-probs"""
 
-if sys.platform == 'win32':
-    online_bins = """online-gmm-decode-faster
+online_bins = """online-gmm-decode-faster
+       online-wav-gmm-decode-faster"""
+
+online2_bins = """online2-wav-gmm-latgen-faster apply-cmvn-online
+     extend-wav-with-silence compress-uncompress-speex
+     online2-wav-nnet2-latgen-faster ivector-extract-online2
+     online2-wav-dump-features ivector-randomize
+     online2-wav-nnet2-am-compute  online2-wav-nnet2-latgen-threaded
+     online2-wav-nnet3-latgen-faster online2-wav-nnet3-latgen-grammar
+     online2-wav-nnet3-latgen-incremental
+     online2-wav-nnet3-wake-word-decoder-faster"""
+
+if sys.platform != 'win32':
+    online_bins += """ online-net-client online-server-gmm-decode-faster
            online-wav-gmm-decode-faster"""
-    online2_bins = """online2-wav-gmm-latgen-faster apply-cmvn-online
-         extend-wav-with-silence compress-uncompress-speex
-         online2-wav-nnet2-latgen-faster ivector-extract-online2
-         online2-wav-dump-features ivector-randomize
-         online2-wav-nnet2-am-compute  online2-wav-nnet2-latgen-threaded
-         online2-wav-nnet3-latgen-faster online2-wav-nnet3-latgen-grammar
-         online2-wav-nnet3-latgen-incremental
-         online2-wav-nnet3-wake-word-decoder-faster"""
-else:
-    online_bins = """online-net-client online-server-gmm-decode-faster online-gmm-decode-faster
-           online-wav-gmm-decode-faster online-audio-server-decode-faster
-           online-audio-client"""
-    online2_bins = """online2-wav-gmm-latgen-faster apply-cmvn-online
-         extend-wav-with-silence compress-uncompress-speex
-         online2-wav-nnet2-latgen-faster ivector-extract-online2
-         online2-wav-dump-features ivector-randomize
-         online2-wav-nnet2-am-compute  online2-wav-nnet2-latgen-threaded
-         online2-wav-nnet3-latgen-faster online2-wav-nnet3-latgen-grammar
-         online2-tcp-nnet3-decode-faster online2-tcp-nnet3-decode-faster-emscripten 
-         online2-wav-nnet3-latgen-incremental online2-wav-nnet3-wake-word-decoder-faster"""
+    online2_bins += """ online2-tcp-nnet3-decode-faster online2-tcp-nnet3-decode-faster-emscripten """
 
 
 if __name__ == '__main__':
@@ -273,3 +266,4 @@ if __name__ == '__main__':
     if test_cuda:
         check_outputs(cuda_decoder_bins)
         check_outputs(cuda_feat_bins)
+
