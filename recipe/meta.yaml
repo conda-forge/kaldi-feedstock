@@ -44,7 +44,7 @@ source:
     - patches/0005-Shared-libraries-on-windows.patch
 
 build:
-  number: 0
+  number: 1
   # Bug in for cuda 11.1 with c++17 on linux: https://forums.developer.nvidia.com/t/nvc-20-9-fails-to-compile-code-instantiating-any-std-tuple-with-gcc-10-2-on-c-17/160987
   skip: true  # [cuda_compiler_version == "10.2" or (linux and cuda_compiler_version == "11.1")]
 
@@ -57,6 +57,8 @@ outputs:
     build:
       string: cuda{{ cuda_compiler_version | replace('.', '') }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
       string: cpu_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                                # [cuda_compiler_version == "None"]
+      run_exports:
+        - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
     script: build_kaldi.sh   # [not win]
     script: build_kaldi.bat  # [win]
     requirements:
@@ -88,8 +90,6 @@ outputs:
         - magma    # [cuda_compiler_version != "None"]
         - openfst
         - ucrt     # [win]
-      run_exports:
-        - {{ pin_subpackage('kaldi', max_pin='x.x.x') }}
     test:
       # will also run run_test.py (checking the binaries)
       commands:
