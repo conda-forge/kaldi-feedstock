@@ -77,6 +77,11 @@ mkdir build
 
 pushd build
 
+if [[ "${target_platform}" == "linux-64" ]] && [[ "${cuda_compiler_version}" =~ 12.* ]]; then
+    # Cuda 12.0 places files in the targets/platform directory structure rather than in PREFIX/lib and PREFIX/include
+    CMAKE_ARGS="${CMAKE_ARGS} -DCUDA_TOOLKIT_ROOT_DIR=${PREFIX}/targets/x86_64-linux"
+fi
+
 cmake ${CMAKE_ARGS} \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
     -DCONDA_ROOT="${PREFIX}" \
