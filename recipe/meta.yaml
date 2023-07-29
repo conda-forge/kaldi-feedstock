@@ -42,11 +42,10 @@ source:
     - patches/0003-Support-openfst-1.8.1.patch
     - patches/0004-Support-openfst-1.8.2.patch
     - patches/0005-Shared-libraries-on-windows.patch
+    - patches/0006-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
 
 build:
   number: 1
-  # Bug in for cuda 11.1 with c++17 on linux: https://forums.developer.nvidia.com/t/nvc-20-9-fails-to-compile-code-instantiating-any-std-tuple-with-gcc-10-2-on-c-17/160987
-  skip: true  # [cuda_compiler_version == "10.2" or (linux and cuda_compiler_version == "11.1")]
 
 requirements:
   build:
@@ -72,24 +71,35 @@ outputs:
         - libtool   # [not win]
         - automake  # [not win]
       host:
+        - cuda-version {{ cuda_compiler_version }}  # [cuda_compiler_version != "None"]
+        - cuda-profiler-api                         # [(cuda_compiler_version or "").startswith("12")]
+        - cuda-nvtx-dev                             # [(cuda_compiler_version or "").startswith("12")]
+        - cuda-cudart-dev                           # [(cuda_compiler_version or "").startswith("12")]
+        - cuda-driver-dev                           # [(cuda_compiler_version or "").startswith("12")]
+        - cuda-nvrtc-dev                            # [(cuda_compiler_version or "").startswith("12")]
+        - libcublas-dev                             # [(cuda_compiler_version or "").startswith("12")]
+        - libcurand-dev                             # [(cuda_compiler_version or "").startswith("12")]
+        - libcufft-dev                              # [(cuda_compiler_version or "").startswith("12")]
+        - libcusolver-dev                           # [(cuda_compiler_version or "").startswith("12")]
+        - libcusparse-dev                           # [(cuda_compiler_version or "").startswith("12")]
         - icu
         - libblas
         - libcblas
         - liblapack
         - liblapacke
-        - magma           # [cuda_compiler_version != "None"]
-        - pthreads-win32  # [win]
+        - magma                                     # [cuda_compiler_version != "None"]
+        - pthreads-win32                            # [win]
         - zlib
         - openfst
-        - dlfcn-win32  # [win]
+        - dlfcn-win32                               # [win]
       run:
         - libblas
         - libcblas
         - liblapack
         - liblapacke
-        - magma    # [cuda_compiler_version != "None"]
+        - magma                                     # [cuda_compiler_version != "None"]
         - openfst
-        - ucrt     # [win]
+        - ucrt                                      # [win]
     test:
       # will also run run_test.py (checking the binaries)
       commands:
