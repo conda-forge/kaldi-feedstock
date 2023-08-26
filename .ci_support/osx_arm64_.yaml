@@ -15,7 +15,7 @@ fortran_compiler:
 fortran_compiler_version:
 - '12'
 icu:
-- '72'
+- '73'
 libblas:
 - 3.9 *netlib
 libcblas:
