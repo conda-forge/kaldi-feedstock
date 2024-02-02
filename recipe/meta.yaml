@@ -1,4 +1,4 @@
-{% set version = "5.5.112" %}
+{% set version = "5.5.1112" %}
 # minor/major is https://github.com/kaldi-asr/kaldi/blob/master/src/.version;
 # patch version is the number of commits since then, see
 # https://github.com/kaldi-asr/kaldi/blob/master/cmake/VersionHelper.cmake
@@ -83,10 +83,13 @@ outputs:
         - libcusolver-dev                           # [(cuda_compiler_version or "").startswith("12")]
         - libcusparse-dev                           # [(cuda_compiler_version or "").startswith("12")]
         - icu
-        - libblas
-        - libcblas
-        - liblapack
-        - liblapacke
+        #- blas=*=netlib
+        #- lapack=*=netlib
+        #- blas-devel=*=netlib
+        - libblas * *netlib
+        - libcblas * *netlib
+        - liblapack * *netlib
+        - liblapacke * *netlib
         - magma                                     # [cuda_compiler_version != "None"]
         - pthreads-win32                            # [win]
         - zlib
