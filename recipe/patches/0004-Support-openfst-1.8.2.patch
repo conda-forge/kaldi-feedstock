@@ -1,7 +1,7 @@
-From 2738ab12209700a6fccb8db32f7f6979a864ab65 Mon Sep 17 00:00:00 2001
+From 21393a2a590dbdb71e00509ef5d83afe473ddf68 Mon Sep 17 00:00:00 2001
 From: Yuriy Chernyshov <thegeorg@yandex-team.com>
 Date: Thu, 23 Feb 2023 21:24:25 +0300
-Subject: [PATCH 4/5] Support openfst-1.8.2
+Subject: [PATCH] Support openfst-1.8.2
 
 ---
  src/base/kaldi-types.h                | 43 +++++++--------------------
@@ -19,10 +19,10 @@ Subject: [PATCH 4/5] Support openfst-1.8.2
  src/tree/tree-renderer.cc             |  4 +--
  13 files changed, 28 insertions(+), 49 deletions(-)
 
-diff --git a/src/base/kaldi-types.h b/src/base/kaldi-types.h
+diff --git src/base/kaldi-types.h src/base/kaldi-types.h
 index 7ebf4f853..68d5578a5 100644
---- a/src/base/kaldi-types.h
-+++ b/src/base/kaldi-types.h
+--- src/base/kaldi-types.h
++++ src/base/kaldi-types.h
 @@ -39,37 +39,16 @@ typedef float   BaseFloat;
  // we find in the future lacks stdint.h
  #include <stdint.h>
@@ -72,10 +72,10 @@ index 7ebf4f853..68d5578a5 100644
 +typedef double   double64;
  
  #endif  // KALDI_BASE_KALDI_TYPES_H_
-diff --git a/src/fstext/lattice-utils-inl.h b/src/fstext/lattice-utils-inl.h
+diff --git src/fstext/lattice-utils-inl.h src/fstext/lattice-utils-inl.h
 index 5d52ed3aa..03ac9947c 100644
---- a/src/fstext/lattice-utils-inl.h
-+++ b/src/fstext/lattice-utils-inl.h
+--- src/fstext/lattice-utils-inl.h
++++ src/fstext/lattice-utils-inl.h
 @@ -270,7 +270,7 @@ void ConvertFstToLattice(
    fst::CacheOptions cache_opts(true, num_states_cache);
    fst::ArcMapFstOptions mapfst_opts(cache_opts);
@@ -85,10 +85,10 @@ index 5d52ed3aa..03ac9947c 100644
           StdToLatticeMapper<Real> > map_fst(ifst, mapper, mapfst_opts);
    *ofst = map_fst;
  }
-diff --git a/src/kws/kws-functions.cc b/src/kws/kws-functions.cc
+diff --git src/kws/kws-functions.cc src/kws/kws-functions.cc
 index 3e27226f1..e6819562f 100644
---- a/src/kws/kws-functions.cc
-+++ b/src/kws/kws-functions.cc
+--- src/kws/kws-functions.cc
++++ src/kws/kws-functions.cc
 @@ -175,7 +175,7 @@ bool CreateFactorTransducer(const CompactLattice &clat,
  
    // Now we map the CompactLattice to VectorFst<KwsProductArc>. We drop the
@@ -107,10 +107,10 @@ index 3e27226f1..e6819562f 100644
        &index_transducer,
        KwsProductFstToKwsLexicographicFstMapper());
  
-diff --git a/src/kws/kws-functions2.cc b/src/kws/kws-functions2.cc
+diff --git src/kws/kws-functions2.cc src/kws/kws-functions2.cc
 index 71f5583af..9e610d205 100644
---- a/src/kws/kws-functions2.cc
-+++ b/src/kws/kws-functions2.cc
+--- src/kws/kws-functions2.cc
++++ src/kws/kws-functions2.cc
 @@ -92,7 +92,7 @@ void DoFactorMerging(KwsProductFst *factor_transducer,
  
    Decode(&dest_transducer, encoder);
@@ -120,10 +120,10 @@ index 71f5583af..9e610d205 100644
  }
  
  void DoFactorDisambiguation(KwsLexicographicFst *index_transducer) {
-diff --git a/src/lat/arctic-weight.h b/src/lat/arctic-weight.h
+diff --git src/lat/arctic-weight.h src/lat/arctic-weight.h
 index 5c0c6d3c4..39775ac89 100644
---- a/src/lat/arctic-weight.h
-+++ b/src/lat/arctic-weight.h
+--- src/lat/arctic-weight.h
++++ src/lat/arctic-weight.h
 @@ -50,7 +50,7 @@ class ArcticWeightTpl : public FloatWeightTpl<T> {
  
    static const std::string &Type() {
@@ -133,10 +133,10 @@ index 5c0c6d3c4..39775ac89 100644
      return type;
    }
  
-diff --git a/src/lat/determinize-lattice-pruned.cc b/src/lat/determinize-lattice-pruned.cc
+diff --git src/lat/determinize-lattice-pruned.cc src/lat/determinize-lattice-pruned.cc
 index dbdd9af46..ff3d65d57 100644
---- a/src/lat/determinize-lattice-pruned.cc
-+++ b/src/lat/determinize-lattice-pruned.cc
+--- src/lat/determinize-lattice-pruned.cc
++++ src/lat/determinize-lattice-pruned.cc
 @@ -1499,7 +1499,7 @@ bool DeterminizeLatticePhonePrunedWrapper(
    }
    ILabelCompare<kaldi::LatticeArc> ilabel_comp;
@@ -164,10 +164,10 @@ index dbdd9af46..ff3d65d57 100644
      const kaldi::TransitionInformation &trans_model,
      MutableFst<kaldi::LatticeArc> *ifst,
      double prune,
-diff --git a/src/lat/minimize-lattice.cc b/src/lat/minimize-lattice.cc
+diff --git src/lat/minimize-lattice.cc src/lat/minimize-lattice.cc
 index ada90efad..416f1e62e 100644
---- a/src/lat/minimize-lattice.cc
-+++ b/src/lat/minimize-lattice.cc
+--- src/lat/minimize-lattice.cc
++++ src/lat/minimize-lattice.cc
 @@ -279,7 +279,7 @@ bool MinimizeCompactLattice(
  
  // Instantiate for CompactLattice type.
@@ -177,10 +177,10 @@ index ada90efad..416f1e62e 100644
      MutableFst<kaldi::CompactLatticeArc> *clat, float delta);
    
  
-diff --git a/src/lat/push-lattice.cc b/src/lat/push-lattice.cc
+diff --git src/lat/push-lattice.cc src/lat/push-lattice.cc
 index f4eb322d0..38a990d74 100644
---- a/src/lat/push-lattice.cc
-+++ b/src/lat/push-lattice.cc
+--- src/lat/push-lattice.cc
++++ src/lat/push-lattice.cc
 @@ -280,11 +280,11 @@ bool PushCompactLatticeWeights(
  
  // Instantiate for CompactLattice.
@@ -195,10 +195,10 @@ index f4eb322d0..38a990d74 100644
     MutableFst<kaldi::CompactLatticeArc> *clat);
  
  }  // namespace fst
-diff --git a/src/lat/sausages.cc b/src/lat/sausages.cc
+diff --git src/lat/sausages.cc src/lat/sausages.cc
 index b851bc360..03b384f93 100644
---- a/src/lat/sausages.cc
-+++ b/src/lat/sausages.cc
+--- src/lat/sausages.cc
++++ src/lat/sausages.cc
 @@ -325,7 +325,7 @@ void MinimumBayesRisk::PrepareLatticeAndInitStats(CompactLattice *clat) {
    // paper (i.e. just one final state).
  
@@ -208,10 +208,10 @@ index b851bc360..03b384f93 100644
    if (!(props & fst::kTopSorted)) {
      if (fst::TopSort(clat) == false)
        KALDI_ERR << "Cycles detected in lattice.";
-diff --git a/src/nnet3/nnet-batch-compute.cc b/src/nnet3/nnet-batch-compute.cc
+diff --git src/nnet3/nnet-batch-compute.cc src/nnet3/nnet-batch-compute.cc
 index 0e07834ed..fd84c4e56 100644
---- a/src/nnet3/nnet-batch-compute.cc
-+++ b/src/nnet3/nnet-batch-compute.cc
+--- src/nnet3/nnet-batch-compute.cc
++++ src/nnet3/nnet-batch-compute.cc
 @@ -1503,7 +1503,7 @@ NnetBatchDecoder::~NnetBatchDecoder() {
    }
    // Print diagnostics.
@@ -221,10 +221,10 @@ index 0e07834ed..fd84c4e56 100644
        frame_count_ * computer_->GetOptions().frame_subsampling_factor;
    int32 num_threads = static_cast<int32>(decode_threads_.size());
  
-diff --git a/src/online/online-tcp-source.cc b/src/online/online-tcp-source.cc
+diff --git src/online/online-tcp-source.cc src/online/online-tcp-source.cc
 index 6d63493b4..8421073d5 100644
---- a/src/online/online-tcp-source.cc
-+++ b/src/online/online-tcp-source.cc
+--- src/online/online-tcp-source.cc
++++ src/online/online-tcp-source.cc
 @@ -24,7 +24,7 @@
  
  namespace kaldi {
@@ -234,10 +234,10 @@ index 6d63493b4..8421073d5 100644
  
  OnlineTcpVectorSource::OnlineTcpVectorSource(int32 socket)
      : socket_desc(socket),
-diff --git a/src/rnnlm/rnnlm-test-utils.cc b/src/rnnlm/rnnlm-test-utils.cc
+diff --git src/rnnlm/rnnlm-test-utils.cc src/rnnlm/rnnlm-test-utils.cc
 index 32e8b5a42..f415f257a 100644
---- a/src/rnnlm/rnnlm-test-utils.cc
-+++ b/src/rnnlm/rnnlm-test-utils.cc
+--- src/rnnlm/rnnlm-test-utils.cc
++++ src/rnnlm/rnnlm-test-utils.cc
 @@ -78,7 +78,7 @@ void ConvertToInteger(
    for (int i = 0; i < string_sentences.size(); i++) {
      (*int_sentences)[i].resize(string_sentences[i].size());
@@ -247,10 +247,10 @@ index 32e8b5a42..f415f257a 100644
        KALDI_ASSERT(key != -1); // fst::kNoSymbol
        (*int_sentences)[i][j] = static_cast<int32>(key);
      }
-diff --git a/src/tree/tree-renderer.cc b/src/tree/tree-renderer.cc
+diff --git src/tree/tree-renderer.cc src/tree/tree-renderer.cc
 index bbaa5cda1..8e3b463fe 100644
---- a/src/tree/tree-renderer.cc
-+++ b/src/tree/tree-renderer.cc
+--- src/tree/tree-renderer.cc
++++ src/tree/tree-renderer.cc
 @@ -67,7 +67,7 @@ TreeRenderer::MakeEdgeLabel(const EventKeyType &key,
        oss << ", ";
      if (key != kPdfClass) {
@@ -270,5 +270,5 @@ index bbaa5cda1..8e3b463fe 100644
            KALDI_ERR << "Phone ID found in a TableEventMap, but not in the "
                      << "phone symbol table! ID: " << t;
 -- 
-2.30.0.windows.2
+2.33.0.windows.1
 
