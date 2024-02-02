@@ -83,13 +83,10 @@ outputs:
         - libcusolver-dev                           # [(cuda_compiler_version or "").startswith("12")]
         - libcusparse-dev                           # [(cuda_compiler_version or "").startswith("12")]
         - icu
-        #- blas=*=netlib
-        #- lapack=*=netlib
-        #- blas-devel=*=netlib
-        - libblas * *netlib
-        - libcblas * *netlib
-        - liblapack * *netlib
-        - liblapacke * *netlib
+        - libblas
+        - libcblas
+        - liblapack
+        - liblapacke
         - magma                                     # [cuda_compiler_version != "None"]
         - pthreads-win32                            # [win]
         - zlib
