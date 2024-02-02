@@ -1,7 +1,7 @@
-From 97a3ed0074fd355fdb05b85a24ff1428a57f356a Mon Sep 17 00:00:00 2001
+From 955e0071b7d5e107bf5df8e18dbda792c93a4b29 Mon Sep 17 00:00:00 2001
 From: Yuriy Chernyshov <thegeorg@yandex-team.com>
 Date: Thu, 23 Feb 2023 21:24:18 +0300
-Subject: [PATCH 3/5] Support openfst-1.8.1
+Subject: [PATCH] Support openfst-1.8.1
 
 ---
  src/fstext/kaldi-fst-io-inl.h                 |  2 +-
@@ -10,10 +10,10 @@ Subject: [PATCH 3/5] Support openfst-1.8.1
  src/lat/lattice-functions-transition-model.cc |  4 ++--
  4 files changed, 12 insertions(+), 12 deletions(-)
 
-diff --git a/src/fstext/kaldi-fst-io-inl.h b/src/fstext/kaldi-fst-io-inl.h
+diff --git src/fstext/kaldi-fst-io-inl.h src/fstext/kaldi-fst-io-inl.h
 index f7bb3a7c2..01047919c 100644
---- a/src/fstext/kaldi-fst-io-inl.h
-+++ b/src/fstext/kaldi-fst-io-inl.h
+--- src/fstext/kaldi-fst-io-inl.h
++++ src/fstext/kaldi-fst-io-inl.h
 @@ -99,7 +99,7 @@ void ReadFstKaldi(std::istream &is, bool binary,
      fst->DeleteStates();
      string line;
@@ -23,10 +23,10 @@ index f7bb3a7c2..01047919c 100644
      while (std::getline(is, line)) {
        nline++;
        vector<string> col;
-diff --git a/src/fstext/lattice-weight.h b/src/fstext/lattice-weight.h
+diff --git src/fstext/lattice-weight.h src/fstext/lattice-weight.h
 index 6e7737a19..f03ed7025 100644
---- a/src/fstext/lattice-weight.h
-+++ b/src/fstext/lattice-weight.h
+--- src/fstext/lattice-weight.h
++++ src/fstext/lattice-weight.h
 @@ -396,8 +396,8 @@ inline bool ApproxEqual(const LatticeWeightTpl<FloatType> &w1,
  template <class FloatType>
  inline std::ostream &operator <<(std::ostream &strm, const LatticeWeightTpl<FloatType> &w) {
@@ -72,10 +72,10 @@ index 6e7737a19..f03ed7025 100644
    if (pos == std::string::npos) {
      strm.clear(std::ios::badbit);
      return strm;
-diff --git a/src/lat/kaldi-lattice.cc b/src/lat/kaldi-lattice.cc
+diff --git src/lat/kaldi-lattice.cc src/lat/kaldi-lattice.cc
 index 648e67115..70fde5acf 100644
---- a/src/lat/kaldi-lattice.cc
-+++ b/src/lat/kaldi-lattice.cc
+--- src/lat/kaldi-lattice.cc
++++ src/lat/kaldi-lattice.cc
 @@ -114,7 +114,7 @@ class LatticeReader {
      CompactLattice *cfst = new CompactLattice();
      string line;
@@ -85,10 +85,10 @@ index 648e67115..70fde5acf 100644
      while (std::getline(is, line)) {
        nline++;
        vector<string> col;
-diff --git a/src/lat/lattice-functions-transition-model.cc b/src/lat/lattice-functions-transition-model.cc
+diff --git src/lat/lattice-functions-transition-model.cc src/lat/lattice-functions-transition-model.cc
 index 6172610dc..a8cd7b7e2 100644
---- a/src/lat/lattice-functions-transition-model.cc
-+++ b/src/lat/lattice-functions-transition-model.cc
+--- src/lat/lattice-functions-transition-model.cc
++++ src/lat/lattice-functions-transition-model.cc
 @@ -248,13 +248,13 @@ bool TestWordAlignedLattice(const WordAlignLatticeLexiconInfo &lexicon_info,
    int32 num_paths = 5, seed = Rand(), max_path_length = -1;
    BaseFloat delta = 0.2; // some lattices have large costs -> use large delta.
@@ -106,5 +106,5 @@ index 6172610dc..a8cd7b7e2 100644
    return (num_err == 0);
  }
 -- 
-2.30.0.windows.2
+2.33.0.windows.1
 

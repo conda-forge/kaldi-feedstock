@@ -1,8 +1,8 @@
-{% set version = "5.5.1068" %}
+{% set version = "5.5.112" %}
 # minor/major is https://github.com/kaldi-asr/kaldi/blob/master/src/.version;
 # patch version is the number of commits since then, see
 # https://github.com/kaldi-asr/kaldi/blob/master/cmake/VersionHelper.cmake
-{% set commit = "59299d1cf95b72bb109d583947d9e9ece19aa6dc" %}
+{% set commit = "8c451e28582f5d91f84ea3d64bb76c794c3b1683" %}
 {% set kaldi_proc_type = "cuda" if cuda_compiler_version != "None" else "cpu" %}
 
 {% set kaldi_libraries = [
@@ -34,7 +34,7 @@ package:
 
 source:
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
-  sha256: aae30bb72ca2522eeec6582aaad092b4188fa17af33acb9a8d970419151edbd6
+  sha256: ca169b55f21c7a8420b023ad94b17bfcc9bb0c025bacf2ab3330171ab33d7e08
   patches:
     # Patches based on https://github.com/kaldi-asr/kaldi/pull/4829
     - patches/0001-Support-openfst-1.7.6.patch
@@ -45,7 +45,7 @@ source:
     - patches/0006-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
 
 build:
-  number: 2
+  number: 0
 
 requirements:
   build:
@@ -90,7 +90,7 @@ outputs:
         - magma                                     # [cuda_compiler_version != "None"]
         - pthreads-win32                            # [win]
         - zlib
-        - openfst
+        - openfst ==1.8.3
         - dlfcn-win32                               # [win]
       run:
         - libblas
@@ -98,7 +98,7 @@ outputs:
         - liblapack
         - liblapacke
         - magma                                     # [cuda_compiler_version != "None"]
-        - openfst
+        - openfst ==1.8.3
         - ucrt                                      # [win]
     test:
       # will also run run_test.py (checking the binaries)
