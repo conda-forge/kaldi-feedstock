@@ -1,4 +1,4 @@
-{% set version = "5.5.112" %}
+{% set version = "5.5.1112" %}
 # minor/major is https://github.com/kaldi-asr/kaldi/blob/master/src/.version;
 # patch version is the number of commits since then, see
 # https://github.com/kaldi-asr/kaldi/blob/master/cmake/VersionHelper.cmake
