@@ -82,7 +82,7 @@ outputs:
         {% if cuda_major >= 12 %}
         - cuda-version {{ cuda_compiler_version }}
         - cuda-cudart-dev
-        - cuda-driver-dev
+        - cuda-driver-dev           # [linux]
         - cuda-nvrtc-dev
         - cuda-nvtx-dev
         - cuda-profiler-api
