@@ -77,7 +77,7 @@ outputs:
         - cuda-profiler-api                         # [(cuda_compiler_version or "").startswith("12")]
         - cuda-nvtx-dev                             # [(cuda_compiler_version or "").startswith("12")]
         - cuda-cudart-dev                           # [(cuda_compiler_version or "").startswith("12")]
-        - cuda-driver-dev                           # [(cuda_compiler_version or "").startswith("12")]
+        - cuda-driver-dev                           # [(cuda_compiler_version or "").startswith("12") and linux]
         - cuda-nvrtc-dev                            # [(cuda_compiler_version or "").startswith("12")]
         - libcublas-dev                             # [(cuda_compiler_version or "").startswith("12")]
         - libcurand-dev                             # [(cuda_compiler_version or "").startswith("12")]
