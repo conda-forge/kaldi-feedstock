@@ -23,6 +23,11 @@ if "%cuda_compiler_version%"=="None" (
 )
 
 if "%cuda_compiler_version%"=="12.0" (
+    REM header-only on windows as of CUDA 12, see
+    REM https://github.com/conda-forge/cuda-nvtx-feedstock/issues/4
+    set "NvToolExt_INCLUDE_DIR=%LIBRARY_INC%/targets/x64"
+    REM set fake path to shut up CMake
+    set "NvToolExt_LIBRARIES=%LIBRARY_LIB%"
     set "CMAKE_EXTRA=-DCUDA_TOOLKIT_ROOT_DIR=%LIBRARY_PREFIX%"
 )
 
