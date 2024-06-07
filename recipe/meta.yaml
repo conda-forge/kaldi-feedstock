@@ -45,11 +45,15 @@ source:
     - patches/0006-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
 
 build:
-  number: 1
+  number: 2
+  # DEBUG
+  skip: true  # [not win]
+  skip: true  # [cuda_compiler_version != "12.0"]
 
 requirements:
   build:
     - {{ compiler('cxx') }}
+    - {{ stdlib("c") }}
 
 outputs:
   - name: kaldi
@@ -64,6 +68,7 @@ outputs:
       build:
         - {{ compiler('cxx') }}
         - {{ compiler('fortran') }}  # [not win]
+        - {{ stdlib("c") }}    # [not win]
         - {{ compiler('cuda') }}     # [cuda_compiler_version != "None"]
         - cmake
         - ninja
@@ -75,7 +80,7 @@ outputs:
         - cuda-profiler-api                         # [(cuda_compiler_version or "").startswith("12")]
         - cuda-nvtx-dev                             # [(cuda_compiler_version or "").startswith("12")]
         - cuda-cudart-dev                           # [(cuda_compiler_version or "").startswith("12")]
-        - cuda-driver-dev                           # [(cuda_compiler_version or "").startswith("12")]
+        - cuda-driver-dev                           # [(cuda_compiler_version or "").startswith("12") and linux]
         - cuda-nvrtc-dev                            # [(cuda_compiler_version or "").startswith("12")]
         - libcublas-dev                             # [(cuda_compiler_version or "").startswith("12")]
         - libcurand-dev                             # [(cuda_compiler_version or "").startswith("12")]
