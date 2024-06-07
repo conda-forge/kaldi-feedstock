@@ -1,7 +1,7 @@
-From a93cba8fc45e8d1546b2dfa98c086d6d24452905 Mon Sep 17 00:00:00 2001
+From 1ba65b3758e01a065c36c2dcafd005a4b4d67b1c Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 10 May 2023 13:34:32 -0700
-Subject: [PATCH] Shared libraries on windows
+Subject: [PATCH 5/6] Shared libraries on windows
 
 ---
  CMakeLists.txt                                | 25 +++++++------
@@ -28,10 +28,10 @@ Subject: [PATCH] Shared libraries on windows
  21 files changed, 146 insertions(+), 66 deletions(-)
  create mode 100644 src/base/kaldi-dll-exports.h
 
-diff --git CMakeLists.txt CMakeLists.txt
+diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 886af19c6..24cb574a6 100644
---- CMakeLists.txt
-+++ CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
 @@ -22,7 +22,6 @@ endif()
  
  include(third_party/get_third_party)
@@ -97,10 +97,10 @@ index 886af19c6..24cb574a6 100644
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables
-diff --git cmake/gen_cmake_skeleton.py cmake/gen_cmake_skeleton.py
-index c8fee4c41..f1a92b74b 100644
---- cmake/gen_cmake_skeleton.py
-+++ cmake/gen_cmake_skeleton.py
+diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
+index c8fee4c41..154369dd5 100644
+--- a/cmake/gen_cmake_skeleton.py
++++ b/cmake/gen_cmake_skeleton.py
 @@ -154,6 +154,7 @@ def disable_for_win32(t):
          "online-audio-client",
          "online-net-client",
@@ -136,32 +136,32 @@ index c8fee4c41..f1a92b74b 100644
 +        if self.dir_name.startswith("base"):
 +            ret.append("if(MSVC)")
 +            ret.append("set_target_properties(" + self.target_name + " PROPERTIES DEFINE_SYMBOL \"KALDI_DLL_EXPORTS\")")
-+            
++
 +            ret.append("target_compile_definitions(" + self.target_name + " INTERFACE KALDI_DLL_IMPORTS)")
 +
 +            ret.append("endif(MSVC)\n")
 +        elif self.dir_name.startswith("cudamatrix"):
 +            ret.append("if(MSVC)")
 +            ret.append("set_target_properties(" + self.target_name + " PROPERTIES DEFINE_SYMBOL \"KALDI_CUMATRIX_DLL_EXPORTS\")")
-+            
++
 +            ret.append("target_compile_definitions(" + self.target_name + " INTERFACE KALDI_CUMATRIX_DLL_IMPORTS)")
 +
 +            ret.append("endif(MSVC)\n")
 +        elif self.dir_name.startswith("util"):
 +            ret.append("if(MSVC)")
 +            ret.append("set_target_properties(" + self.target_name + " PROPERTIES DEFINE_SYMBOL \"KALDI_UTIL_DLL_EXPORTS\")")
-+            
++
 +            ret.append("target_compile_definitions(" + self.target_name + " INTERFACE KALDI_UTIL_DLL_IMPORTS)")
 +
 +            ret.append("endif(MSVC)\n")
  
          if len(self.depends) > 0:
              ret.append("target_link_libraries(" + self.target_name + " PUBLIC")
-diff --git src/base/kaldi-dll-exports.h src/base/kaldi-dll-exports.h
+diff --git a/src/base/kaldi-dll-exports.h b/src/base/kaldi-dll-exports.h
 new file mode 100644
 index 000000000..ee1d84cd6
 --- /dev/null
-+++ src/base/kaldi-dll-exports.h
++++ b/src/base/kaldi-dll-exports.h
 @@ -0,0 +1,29 @@
 +
 +#ifndef kaldi_dll_export_H
@@ -192,10 +192,10 @@ index 000000000..ee1d84cd6
 +#endif // defined(KALDI_CUMATRIX_DLL_EXPORTS)
 +
 +#endif /* kaldi_dll_export_H */
-diff --git src/base/kaldi-error.h src/base/kaldi-error.h
+diff --git a/src/base/kaldi-error.h b/src/base/kaldi-error.h
 index a9904a752..bc950f3da 100644
---- src/base/kaldi-error.h
-+++ src/base/kaldi-error.h
+--- a/src/base/kaldi-error.h
++++ b/src/base/kaldi-error.h
 @@ -33,6 +33,7 @@
  
  #include "base/kaldi-types.h"
@@ -213,10 +213,10 @@ index a9904a752..bc950f3da 100644
  
  /// Get verbosity level, usually set via command line '--verbose=' switch.
  inline int32 GetVerboseLevel() { return g_kaldi_verbose_level; }
-diff --git src/base/kaldi-types.h src/base/kaldi-types.h
+diff --git a/src/base/kaldi-types.h b/src/base/kaldi-types.h
 index 68d5578a5..3a1b8b920 100644
---- src/base/kaldi-types.h
-+++ src/base/kaldi-types.h
+--- a/src/base/kaldi-types.h
++++ b/src/base/kaldi-types.h
 @@ -39,16 +39,30 @@ typedef float   BaseFloat;
  // we find in the future lacks stdint.h
  #include <stdint.h>
@@ -259,10 +259,10 @@ index 68d5578a5..3a1b8b920 100644
 +
  
  #endif  // KALDI_BASE_KALDI_TYPES_H_
-diff --git src/bin/phones-to-prons.cc src/bin/phones-to-prons.cc
+diff --git a/src/bin/phones-to-prons.cc b/src/bin/phones-to-prons.cc
 index 0d7ab12c2..d6a4422a3 100644
---- src/bin/phones-to-prons.cc
-+++ src/bin/phones-to-prons.cc
+--- a/src/bin/phones-to-prons.cc
++++ b/src/bin/phones-to-prons.cc
 @@ -28,9 +28,9 @@
  
  // Create FST that accepts the phone sequence, with any number
@@ -285,10 +285,10 @@ index 0d7ab12c2..d6a4422a3 100644
            KALDI_LOG << "phone sequence is: ";
            for (size_t i = 0; i < phones.size(); i++)
              std::cerr << phones[i] << ' ';
-diff --git src/cudafeat/feature-spectral-cuda.cu src/cudafeat/feature-spectral-cuda.cu
+diff --git a/src/cudafeat/feature-spectral-cuda.cu b/src/cudafeat/feature-spectral-cuda.cu
 index d8fc215b8..035d6bb9d 100644
---- src/cudafeat/feature-spectral-cuda.cu
-+++ src/cudafeat/feature-spectral-cuda.cu
+--- a/src/cudafeat/feature-spectral-cuda.cu
++++ b/src/cudafeat/feature-spectral-cuda.cu
 @@ -109,7 +109,7 @@ __global__ void power_spectrum_kernel(int row_length, float *A_in, int32_t ldi,
  // Expects to be called with 32x8 sized thread block.
  // LDB: Adding use_log flag
@@ -347,10 +347,10 @@ index d8fc215b8..035d6bb9d 100644
        while (s_in_wave < 0 || s_in_wave >= wave_dim) {
          // reflect around the beginning or end of the wave.
          // e.g. -1 -> 0, -2 -> 1.
-diff --git src/cudamatrix/cu-allocator.h src/cudamatrix/cu-allocator.h
+diff --git a/src/cudamatrix/cu-allocator.h b/src/cudamatrix/cu-allocator.h
 index 3edd9f1ca..464f3fd4e 100644
---- src/cudamatrix/cu-allocator.h
-+++ src/cudamatrix/cu-allocator.h
+--- a/src/cudamatrix/cu-allocator.h
++++ b/src/cudamatrix/cu-allocator.h
 @@ -46,6 +46,7 @@
  #include "base/kaldi-common.h"
  #include "util/stl-utils.h"
@@ -377,10 +377,10 @@ index 3edd9f1ca..464f3fd4e 100644
  
  }  // namespace kaldi
  
-diff --git src/cudamatrix/cu-device.cc src/cudamatrix/cu-device.cc
+diff --git a/src/cudamatrix/cu-device.cc b/src/cudamatrix/cu-device.cc
 index fd2c0c64f..5c47aef15 100644
---- src/cudamatrix/cu-device.cc
-+++ src/cudamatrix/cu-device.cc
+--- a/src/cudamatrix/cu-device.cc
++++ b/src/cudamatrix/cu-device.cc
 @@ -631,7 +631,10 @@ CuDevice::~CuDevice() {
  
  // Each thread has its own copy of the CuDevice object.
@@ -393,10 +393,10 @@ index fd2c0c64f..5c47aef15 100644
  
  CuDevice::CuDeviceOptions CuDevice::device_options_;
  
-diff --git src/cudamatrix/cu-device.h src/cudamatrix/cu-device.h
+diff --git a/src/cudamatrix/cu-device.h b/src/cudamatrix/cu-device.h
 index fe8ac7955..7f54e0864 100644
---- src/cudamatrix/cu-device.h
-+++ src/cudamatrix/cu-device.h
+--- a/src/cudamatrix/cu-device.h
++++ b/src/cudamatrix/cu-device.h
 @@ -61,6 +61,7 @@ typedef int cusolverStatus_t;
  #include "base/timer.h"
  #include "cudamatrix/cu-allocator.h"
@@ -447,10 +447,10 @@ index fe8ac7955..7f54e0864 100644
  
    // The variable profile_map_ will only be used if the verbose level is >= 1;
    // it will accumulate some function-level timing information that is printed
-diff --git src/fstbin/make-grammar-fst.cc src/fstbin/make-grammar-fst.cc
+diff --git a/src/fstbin/make-grammar-fst.cc b/src/fstbin/make-grammar-fst.cc
 index 564f25531..a6168bcd1 100644
---- src/fstbin/make-grammar-fst.cc
-+++ src/fstbin/make-grammar-fst.cc
+--- a/src/fstbin/make-grammar-fst.cc
++++ b/src/fstbin/make-grammar-fst.cc
 @@ -27,7 +27,7 @@
  
  template<typename FST>
@@ -460,10 +460,10 @@ index 564f25531..a6168bcd1 100644
                      bool write_as_grammar){
    using namespace kaldi;
    using namespace fst;
-diff --git src/gmmbin/gmm-decode-faster-regtree-fmllr.cc src/gmmbin/gmm-decode-faster-regtree-fmllr.cc
+diff --git a/src/gmmbin/gmm-decode-faster-regtree-fmllr.cc b/src/gmmbin/gmm-decode-faster-regtree-fmllr.cc
 index ca39cbe8c..dab4a85ab 100644
---- src/gmmbin/gmm-decode-faster-regtree-fmllr.cc
-+++ src/gmmbin/gmm-decode-faster-regtree-fmllr.cc
+--- a/src/gmmbin/gmm-decode-faster-regtree-fmllr.cc
++++ b/src/gmmbin/gmm-decode-faster-regtree-fmllr.cc
 @@ -71,7 +71,7 @@ bool DecodeUtterance(kaldi::FasterDecoder *decoder,
                       kaldi::DecodableInterface *decodable,
                       DecodeInfo *info,
@@ -473,10 +473,10 @@ index ca39cbe8c..dab4a85ab 100644
                       BaseFloat *total_like) {
    decoder->Decode(decodable);
    KALDI_LOG << "Length of file is " << num_frames;
-diff --git src/gmmbin/gmm-decode-faster-regtree-mllr.cc src/gmmbin/gmm-decode-faster-regtree-mllr.cc
+diff --git a/src/gmmbin/gmm-decode-faster-regtree-mllr.cc b/src/gmmbin/gmm-decode-faster-regtree-mllr.cc
 index 9a5d9486b..bf89bfb62 100644
---- src/gmmbin/gmm-decode-faster-regtree-mllr.cc
-+++ src/gmmbin/gmm-decode-faster-regtree-mllr.cc
+--- a/src/gmmbin/gmm-decode-faster-regtree-mllr.cc
++++ b/src/gmmbin/gmm-decode-faster-regtree-mllr.cc
 @@ -70,7 +70,7 @@ bool DecodeUtterance(kaldi::FasterDecoder *decoder,
                       kaldi::DecodableInterface *decodable,
                       DecodeInfo *info,
@@ -486,10 +486,10 @@ index 9a5d9486b..bf89bfb62 100644
                       BaseFloat *total_like) {
    decoder->Decode(decodable);
    KALDI_LOG << "Length of file is " << num_frames;;
-diff --git src/gmmbin/gmm-init-biphone.cc src/gmmbin/gmm-init-biphone.cc
+diff --git a/src/gmmbin/gmm-init-biphone.cc b/src/gmmbin/gmm-init-biphone.cc
 index 18f7b68af..31940b8be 100644
---- src/gmmbin/gmm-init-biphone.cc
-+++ src/gmmbin/gmm-init-biphone.cc
+--- a/src/gmmbin/gmm-init-biphone.cc
++++ b/src/gmmbin/gmm-init-biphone.cc
 @@ -222,9 +222,9 @@ BiphoneContextDependencyFull(std::vector<std::vector<int32> > phone_sets,
     It's more efficient to load the biphone counts into a map because
     most entries are zero, but since there are not many biphones, a 2-dim vector
@@ -503,10 +503,10 @@ index 18f7b68af..31940b8be 100644
    // The actual phones start from id = 1 (so the last phone has id = num_phones).
    mono_counts->resize(num_phones + 1, 0);
    bi_counts->resize(num_phones + 1, std::vector<int>(num_phones + 1, 0));
-diff --git src/kwsbin/kws-search.cc src/kwsbin/kws-search.cc
+diff --git a/src/kwsbin/kws-search.cc b/src/kwsbin/kws-search.cc
 index 8e2b2a84d..7dcc3f81b 100644
---- src/kwsbin/kws-search.cc
-+++ src/kwsbin/kws-search.cc
+--- a/src/kwsbin/kws-search.cc
++++ b/src/kwsbin/kws-search.cc
 @@ -120,7 +120,7 @@ typedef kaldi::TableWriter< kaldi::BasicVectorHolder<double> >
                                                          VectorOfDoublesWriter;
  void OutputDetailedStatistics(const std::string &kwid,
@@ -537,10 +537,10 @@ index 8e2b2a84d..7dcc3f81b 100644
        Compose(keyword_fst, index, &result_fst);
  
        if (stats_wspecifier != "") {
-diff --git src/latbin/lattice-arc-post.cc src/latbin/lattice-arc-post.cc
+diff --git a/src/latbin/lattice-arc-post.cc b/src/latbin/lattice-arc-post.cc
 index 0aca9cdc4..c5b673dd2 100644
---- src/latbin/lattice-arc-post.cc
-+++ src/latbin/lattice-arc-post.cc
+--- a/src/latbin/lattice-arc-post.cc
++++ b/src/latbin/lattice-arc-post.cc
 @@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
      // Read as regular lattice
      kaldi::SequentialCompactLatticeReader clat_reader(lats_rspecifier);
@@ -550,10 +550,10 @@ index 0aca9cdc4..c5b673dd2 100644
      int32 num_lat_done = 0, num_lat_err = 0;
  
      for (; !clat_reader.Done(); clat_reader.Next()) {
-diff --git src/latbin/lattice-compose.cc src/latbin/lattice-compose.cc
+diff --git a/src/latbin/lattice-compose.cc b/src/latbin/lattice-compose.cc
 index d191b076a..4074b0ef9 100644
---- src/latbin/lattice-compose.cc
-+++ src/latbin/lattice-compose.cc
+--- a/src/latbin/lattice-compose.cc
++++ b/src/latbin/lattice-compose.cc
 @@ -126,9 +126,9 @@ int main(int argc, char *argv[]) {
        // with all the cost on the first member of the pair (since we're
        // assuming it's a graph weight).
@@ -578,10 +578,10 @@ index d191b076a..4074b0ef9 100644
              mapped_fst2(fst2, mapper, mapfst_opts);
  
          // sort lat1 on olabel.
-diff --git src/latbin/lattice-lmrescore.cc src/latbin/lattice-lmrescore.cc
+diff --git a/src/latbin/lattice-lmrescore.cc b/src/latbin/lattice-lmrescore.cc
 index 2e5406f75..1a538e538 100644
---- src/latbin/lattice-lmrescore.cc
-+++ src/latbin/lattice-lmrescore.cc
+--- a/src/latbin/lattice-lmrescore.cc
++++ b/src/latbin/lattice-lmrescore.cc
 @@ -75,9 +75,9 @@ int main(int argc, char *argv[]) {
      // with all the cost on the first member of the pair (since it's a graph
      // weight).
@@ -594,10 +594,10 @@ index 2e5406f75..1a538e538 100644
          lm_fst(*std_lm_fst, mapper, mapfst_opts);
      delete std_lm_fst;
  
-diff --git src/latbin/lattice-oracle.cc src/latbin/lattice-oracle.cc
+diff --git a/src/latbin/lattice-oracle.cc b/src/latbin/lattice-oracle.cc
 index 5f2513131..d08ff93f9 100644
---- src/latbin/lattice-oracle.cc
-+++ src/latbin/lattice-oracle.cc
+--- a/src/latbin/lattice-oracle.cc
++++ b/src/latbin/lattice-oracle.cc
 @@ -66,7 +66,7 @@ void ConvertLatticeToUnweightedAcceptor(const kaldi::Lattice &ilat,
    // first convert from  lattice to normal FST
    fst::ConvertLattice(ilat, ofst);
@@ -607,10 +607,10 @@ index 5f2513131..d08ff93f9 100644
    fst::Project(ofst, fst::PROJECT_OUTPUT);  // The words are on the output side
    fst::Relabel(ofst, wildcards, wildcards);
    fst::RmEpsilon(ofst);   // Don't tolerate epsilons as they make it hard to
-diff --git src/onlinebin/online-audio-server-decode-faster.cc src/onlinebin/online-audio-server-decode-faster.cc
+diff --git a/src/onlinebin/online-audio-server-decode-faster.cc b/src/onlinebin/online-audio-server-decode-faster.cc
 index 43a2fa7e6..91b13cf22 100644
---- src/onlinebin/online-audio-server-decode-faster.cc
-+++ src/onlinebin/online-audio-server-decode-faster.cc
+--- a/src/onlinebin/online-audio-server-decode-faster.cc
++++ b/src/onlinebin/online-audio-server-decode-faster.cc
 @@ -65,7 +65,7 @@ bool WriteLine(int32 socket, std::string line);
  const float kFramesPerSecond = 100.0f;
  }  // namespace kaldi
@@ -620,10 +620,10 @@ index 43a2fa7e6..91b13cf22 100644
    using namespace kaldi;
    using namespace fst;
  
-diff --git src/util/kaldi-thread.h src/util/kaldi-thread.h
+diff --git a/src/util/kaldi-thread.h b/src/util/kaldi-thread.h
 index 29cfaee8a..8d6003022 100644
---- src/util/kaldi-thread.h
-+++ src/util/kaldi-thread.h
+--- a/src/util/kaldi-thread.h
++++ b/src/util/kaldi-thread.h
 @@ -26,6 +26,7 @@
  #include <algorithm>
  #include "itf/options-itf.h"
@@ -641,6 +641,3 @@ index 29cfaee8a..8d6003022 100644
  // use threads, which is not many of them, e.g. the SGMM update program does.
  // This is 8 by default.  You can change this on the command line, where
  // used, with --num-threads.  Programs that think they will use threads
--- 
-2.33.0.windows.1
-
