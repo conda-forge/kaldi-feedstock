@@ -1,14 +1,14 @@
-From c79d6575984e67b29c77f8b164fb1c6f81583b9e Mon Sep 17 00:00:00 2001
+From cac58b8101c0d6e6064466d3da967eeba24e4e56 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Thu, 1 Feb 2024 10:41:44 -0800
 Subject: [PATCH 6/6] Cuda 12 support
 
 ---
- CMakeLists.txt | 14 ++++++++++----
- 1 file changed, 10 insertions(+), 4 deletions(-)
+ CMakeLists.txt | 26 +++++++++++++++++++-------
+ 1 file changed, 19 insertions(+), 7 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 24cb574a6..48a28fbfe 100644
+index 24cb574a6..ddef518f2 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -50,3 +50,22 @@ index 24cb574a6..48a28fbfe 100644
      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/gen_cmake_skeleton.py"
      "${CMAKE_CURRENT_SOURCE_DIR}/src"
      "--quiet"
+@@ -201,9 +207,15 @@ if(CUDA_FOUND)
+         ${CUDA_cusolver_LIBRARY}
+         ${CUDA_cusparse_LIBRARY})
+ 
+-    find_package(NvToolExt REQUIRED)
+-    include_directories(${NvToolExt_INCLUDE_DIR})
+-    link_libraries(${NvToolExt_LIBRARIES})
++    if(MSVC)
++        # CMake's detection for NvToolExt fails with CUDA 12; it's header-only now, see
++        # https://github.com/conda-forge/cuda-nvtx-feedstock/issues/4
++        include_directories(${NvToolExt_INCLUDE_DIR})
++    else()
++        find_package(NvToolExt REQUIRED)
++        include_directories(${NvToolExt_INCLUDE_DIR})
++        link_libraries(${NvToolExt_LIBRARIES})
++    endif()
+ 
+ 
+     find_package(CUB REQUIRED)
