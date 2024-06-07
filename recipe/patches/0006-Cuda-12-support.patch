@@ -1,14 +1,14 @@
-From c79d6575984e67b29c77f8b164fb1c6f81583b9e Mon Sep 17 00:00:00 2001
+From bf498f7990f2d528db023e7a3e054017d8d7b400 Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Thu, 1 Feb 2024 10:41:44 -0800
 Subject: [PATCH 6/6] Cuda 12 support
 
 ---
- CMakeLists.txt | 14 ++++++++++----
- 1 file changed, 10 insertions(+), 4 deletions(-)
+ CMakeLists.txt | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 24cb574a6..48a28fbfe 100644
+index 24cb574a6..6f6ce55d9 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -17,7 +17,7 @@ index 24cb574a6..48a28fbfe 100644
  project(kaldi)
  
  if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-@@ -16,6 +16,12 @@ if(CONDA_ROOT)
+@@ -16,6 +16,14 @@ if(CONDA_ROOT)
      include_directories("${CONDA_ROOT}/include")
      if (NOT CUDA_TOOLKIT_ROOT_DIR)
          set(CUDA_TOOLKIT_ROOT_DIR "${CONDA_ROOT}")
@@ -27,10 +27,12 @@ index 24cb574a6..48a28fbfe 100644
 +        link_directories("${CUDA_TOOLKIT_ROOT_DIR}/lib")
 +        link_directories("${CUDA_TOOLKIT_ROOT_DIR}/lib/stubs")
 +        include_directories("${CUDA_TOOLKIT_ROOT_DIR}/include")
++        # cuda-nvtx-dev in conda-forge has a different layout on windows than linux
++        include_directories("${CUDA_TOOLKIT_ROOT_DIR}/include/targets/x64")
      endif()
  
  endif()
-@@ -23,8 +29,8 @@ endif()
+@@ -23,8 +31,8 @@ endif()
  include(third_party/get_third_party)
  
  
@@ -41,7 +43,7 @@ index 24cb574a6..48a28fbfe 100644
      message(FATAL_ERROR "Needs python to auto-generate most CMake files, but not found.")
  endif()
  
-@@ -34,7 +40,7 @@ set(IS_LIB_SHARE "")
+@@ -34,7 +42,7 @@ set(IS_LIB_SHARE "")
  if(BUILD_SHARED_LIBS)
      set(IS_LIB_SHARE "--shared")
  endif()
