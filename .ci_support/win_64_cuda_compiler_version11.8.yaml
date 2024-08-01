@@ -1,3 +1,5 @@
+c_stdlib:
+- vs
 channel_sources:
 - conda-forge
 channel_targets:
@@ -9,7 +11,7 @@ cuda_compiler_version:
 cxx_compiler:
 - vs2019
 icu:
-- '73'
+- '75'
 libblas:
 - 3.9 *netlib
 libcblas:
@@ -24,4 +26,4 @@ zip_keys:
 - - cuda_compiler
   - cuda_compiler_version
 zlib:
-- '1.2'
+- '1'
