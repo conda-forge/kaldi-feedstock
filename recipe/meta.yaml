@@ -66,9 +66,9 @@ outputs:
     script: build_kaldi.bat  # [win]
     requirements:
       build:
+        - {{ stdlib('c') }}
         - {{ compiler('cxx') }}
         - {{ compiler('fortran') }}  # [not win]
-        - {{ stdlib("c") }}    # [not win]
         - {{ compiler('cuda') }}     # [cuda_compiler_version != "None"]
         - cmake
         - ninja
@@ -77,6 +77,8 @@ outputs:
         - automake  # [not win]
       host:
         - cuda-version {{ cuda_compiler_version }}  # [cuda_compiler_version != "None"]
+        # we need headers from cuda-nvcc-dev_win-64, e.g. crt/host_defines.h
+        - {{ compiler('cuda') }}                    # [(cuda_compiler_version or "").startswith("12") and win]
         - cuda-profiler-api                         # [(cuda_compiler_version or "").startswith("12")]
         - cuda-nvtx-dev                             # [(cuda_compiler_version or "").startswith("12")]
         - cuda-cudart-dev                           # [(cuda_compiler_version or "").startswith("12")]
