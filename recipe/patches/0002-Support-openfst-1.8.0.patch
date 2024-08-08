@@ -1,7 +1,7 @@
-From ea22c62e102487ac999e1d3dd1ebc150501a1000 Mon Sep 17 00:00:00 2001
+From a24a9ce041bc07a399f4d2a75df38465583cafb3 Mon Sep 17 00:00:00 2001
 From: Yuriy Chernyshov <thegeorg@yandex-team.com>
 Date: Thu, 23 Feb 2023 21:24:12 +0300
-Subject: [PATCH] Support openfst-1.8.0
+Subject: [PATCH 2/6] Support openfst-1.8.0
 
 ---
  src/fstext/fstext-utils-inl.h  | 2 +-
@@ -9,10 +9,10 @@ Subject: [PATCH] Support openfst-1.8.0
  src/fstext/lattice-utils-inl.h | 2 +-
  3 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git src/fstext/fstext-utils-inl.h src/fstext/fstext-utils-inl.h
+diff --git a/src/fstext/fstext-utils-inl.h b/src/fstext/fstext-utils-inl.h
 index d877c03e1..44e641a3f 100644
---- src/fstext/fstext-utils-inl.h
-+++ src/fstext/fstext-utils-inl.h
+--- a/src/fstext/fstext-utils-inl.h
++++ b/src/fstext/fstext-utils-inl.h
 @@ -163,7 +163,7 @@ void RemoveSomeInputSymbols(const std::vector<I> &to_remove,
                              MutableFst<Arc> *fst) {
    KALDI_ASSERT_IS_INTEGER_TYPE(I);
@@ -22,10 +22,10 @@ index d877c03e1..44e641a3f 100644
  }
  
  template<class Arc, class I>
-diff --git src/fstext/fstext-utils.h src/fstext/fstext-utils.h
+diff --git a/src/fstext/fstext-utils.h b/src/fstext/fstext-utils.h
 index 5789dbe7c..db14ddd35 100644
---- src/fstext/fstext-utils.h
-+++ src/fstext/fstext-utils.h
+--- a/src/fstext/fstext-utils.h
++++ b/src/fstext/fstext-utils.h
 @@ -113,7 +113,7 @@ void PushInLog(VectorFst<StdArc> *fst, uint32 ptype, float delta = kDelta) {
  template<class Arc>
  void MinimizeEncoded(VectorFst<Arc> *fst, float delta = kDelta) {
@@ -35,10 +35,10 @@ index 5789dbe7c..db14ddd35 100644
    EncodeMapper<Arc> encoder(kEncodeLabels | kEncodeWeights, ENCODE);
    Encode(fst, &encoder);
    internal::AcceptorMinimize(fst);
-diff --git src/fstext/lattice-utils-inl.h src/fstext/lattice-utils-inl.h
+diff --git a/src/fstext/lattice-utils-inl.h b/src/fstext/lattice-utils-inl.h
 index c97a538dd..5d52ed3aa 100644
---- src/fstext/lattice-utils-inl.h
-+++ src/fstext/lattice-utils-inl.h
+--- a/src/fstext/lattice-utils-inl.h
++++ b/src/fstext/lattice-utils-inl.h
 @@ -268,7 +268,7 @@ void ConvertFstToLattice(
      MutableFst<ArcTpl<LatticeWeightTpl<Real> > > *ofst) {
    int32 num_states_cache = 50000;
@@ -48,6 +48,3 @@ index c97a538dd..5d52ed3aa 100644
    StdToLatticeMapper<Real> mapper;
    MapFst<StdArc, ArcTpl<LatticeWeightTpl<Real> >,
           StdToLatticeMapper<Real> > map_fst(ifst, mapper, mapfst_opts);
--- 
-2.33.0.windows.1
-
