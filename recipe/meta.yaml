@@ -69,9 +69,9 @@ outputs:
     script: build_kaldi.bat  # [win]
     requirements:
       build:
+        - {{ stdlib('c') }}
         - {{ compiler('cxx') }}
         - {{ compiler('fortran') }}  # [not win]
-        - {{ stdlib("c") }}    # [not win]
         - {{ compiler('cuda') }}     # [cuda_compiler_version != "None"]
         - cmake
         - ninja
@@ -91,6 +91,9 @@ outputs:
         - libcusolver-dev
         - libcusparse-dev
         - libcurand-dev
+        # we need headers from cuda-nvcc-dev_win-64, e.g. crt/host_defines.h; in later
+        # versions of the toolkit (12.{x>...?}), this shouldn't be necessary anymore
+        - {{ compiler('cuda') }}    # [win]
         {% endif %}
         - icu
         - libblas
