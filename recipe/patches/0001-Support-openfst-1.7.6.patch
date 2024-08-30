@@ -1,7 +1,7 @@
-From d33c39a409927dcb1deddcd990e4f3b717e2f58e Mon Sep 17 00:00:00 2001
+From 0250b4de84ba0118c15ae9cc5d0ddf30a7f7420a Mon Sep 17 00:00:00 2001
 From: Yuriy Chernyshov <thegeorg@yandex-team.com>
 Date: Thu, 23 Feb 2023 21:23:57 +0300
-Subject: [PATCH] Support openfst-1.7.6
+Subject: [PATCH 1/6] Support openfst-1.7.6
 
 ---
  src/chain/chain-supervision.cc   | 10 ++++------
@@ -12,10 +12,10 @@ Subject: [PATCH] Support openfst-1.7.6
  src/lat/kaldi-lattice.cc         |  4 ++--
  6 files changed, 16 insertions(+), 18 deletions(-)
 
-diff --git src/chain/chain-supervision.cc src/chain/chain-supervision.cc
+diff --git a/src/chain/chain-supervision.cc b/src/chain/chain-supervision.cc
 index f8a2c1d11..b29000a44 100644
---- src/chain/chain-supervision.cc
-+++ src/chain/chain-supervision.cc
+--- a/src/chain/chain-supervision.cc
++++ b/src/chain/chain-supervision.cc
 @@ -571,9 +571,8 @@ void Supervision::Write(std::ostream &os, bool binary) const {
        // Write using StdAcceptorCompactFst, making use of the fact that it's an
        // acceptor.
@@ -40,10 +40,10 @@ index f8a2c1d11..b29000a44 100644
        }
      }
      WriteToken(os, binary, "</Fsts>");
-diff --git src/fstext/fstext-utils-inl.h src/fstext/fstext-utils-inl.h
+diff --git a/src/fstext/fstext-utils-inl.h b/src/fstext/fstext-utils-inl.h
 index 853697387..d877c03e1 100644
---- src/fstext/fstext-utils-inl.h
-+++ src/fstext/fstext-utils-inl.h
+--- a/src/fstext/fstext-utils-inl.h
++++ b/src/fstext/fstext-utils-inl.h
 @@ -374,12 +374,12 @@ void GetSymbols(const SymbolTable &symtab,
                  std::vector<I> *syms_out) {
    KALDI_ASSERT(syms_out != NULL);
@@ -63,10 +63,10 @@ index 853697387..d877c03e1 100644
      }
    }
  }
-diff --git src/fstext/kaldi-fst-io-inl.h src/fstext/kaldi-fst-io-inl.h
+diff --git a/src/fstext/kaldi-fst-io-inl.h b/src/fstext/kaldi-fst-io-inl.h
 index b6bae4b9d..f7bb3a7c2 100644
---- src/fstext/kaldi-fst-io-inl.h
-+++ src/fstext/kaldi-fst-io-inl.h
+--- a/src/fstext/kaldi-fst-io-inl.h
++++ b/src/fstext/kaldi-fst-io-inl.h
 @@ -44,7 +44,7 @@ void WriteFstKaldi(std::ostream &os, bool binary,
      bool acceptor = false, write_one = false;
      FstPrinter<Arc> printer(t, t.InputSymbols(), t.OutputSymbols(),
@@ -76,10 +76,10 @@ index b6bae4b9d..f7bb3a7c2 100644
      if (os.fail())
        KALDI_ERR << "Stream failure detected writing FST to stream";
      // Write another newline as a terminating character.  The read routine will
-diff --git src/fstext/pre-determinize-inl.h src/fstext/pre-determinize-inl.h
+diff --git a/src/fstext/pre-determinize-inl.h b/src/fstext/pre-determinize-inl.h
 index b67b0ba6f..b531bdef2 100644
---- src/fstext/pre-determinize-inl.h
-+++ src/fstext/pre-determinize-inl.h
+--- a/src/fstext/pre-determinize-inl.h
++++ b/src/fstext/pre-determinize-inl.h
 @@ -235,8 +235,8 @@ inline bool HasBannedPrefixPlusDigits(SymbolTable *symTable, std::string prefix,
    assert(symTable != NULL);
    const char *prefix_ptr = prefix.c_str();
@@ -91,10 +91,10 @@ index b67b0ba6f..b531bdef2 100644
      if (!strncmp(prefix_ptr, sym.c_str(), prefix_len)) {  // has prefix.
        if (isdigit(sym[prefix_len])) {  // we don't allow prefix followed by a digit, as a symbol.
          // Has at least one digit.
-diff --git src/kws/kws-functions.cc src/kws/kws-functions.cc
+diff --git a/src/kws/kws-functions.cc b/src/kws/kws-functions.cc
 index d1d71ce7a..3e27226f1 100644
---- src/kws/kws-functions.cc
-+++ src/kws/kws-functions.cc
+--- a/src/kws/kws-functions.cc
++++ b/src/kws/kws-functions.cc
 @@ -75,7 +75,7 @@ bool ClusterLattice(CompactLattice *clat,
    unordered_map<StateId, std::vector<Interval> >::iterator iter;
    for (iter = head.begin(); iter != head.end(); ++iter) {
@@ -104,10 +104,10 @@ index d1d71ce7a..3e27226f1 100644
      std::vector<Interval> tmp;
      tmp.push_back(iter->second[0]);
      for (int32 i = 1; i < iter->second.size(); i++) {
-diff --git src/lat/kaldi-lattice.cc src/lat/kaldi-lattice.cc
+diff --git a/src/lat/kaldi-lattice.cc b/src/lat/kaldi-lattice.cc
 index 744cc5384..648e67115 100644
---- src/lat/kaldi-lattice.cc
-+++ src/lat/kaldi-lattice.cc
+--- a/src/lat/kaldi-lattice.cc
++++ b/src/lat/kaldi-lattice.cc
 @@ -78,7 +78,7 @@ bool WriteCompactLattice(std::ostream &os, bool binary,
      fst::FstPrinter<CompactLatticeArc> printer(t, t.InputSymbols(),
                                                 t.OutputSymbols(),
@@ -126,6 +126,3 @@ index 744cc5384..648e67115 100644
      if (os.fail())
        KALDI_WARN << "Stream failure detected.";
      // Write another newline as a terminating character.  The read routine will
--- 
-2.33.0.windows.1
-
