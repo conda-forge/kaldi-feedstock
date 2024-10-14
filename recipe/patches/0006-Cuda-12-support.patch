@@ -8,7 +8,7 @@ Subject: [PATCH 6/6] Cuda 12 support
  1 file changed, 19 insertions(+), 7 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 24cb574a6..ddef518f2 100644
+index 24cb574a6..2428b37a9 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -50,13 +50,66 @@ index 24cb574a6..ddef518f2 100644
      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/gen_cmake_skeleton.py"
      "${CMAKE_CURRENT_SOURCE_DIR}/src"
      "--quiet"
-@@ -201,9 +207,15 @@ if(CUDA_FOUND)
-         ${CUDA_cusolver_LIBRARY}
-         ${CUDA_cusparse_LIBRARY})
+@@ -146,10 +152,10 @@ if(MSVC)
+     # Added in source, but we actually should do it in build script, whatever...
+     # add_definitions(-DWIN32_LEAN_AND_MEAN=1)
  
+-    add_compile_options(/permissive- /FS /wd4819 /EHsc /bigobj)
++    # add_compile_options(/permissive- /FS /wd4819 /EHsc /bigobj)
+ 
+     # some warnings related with fst
+-    add_compile_options(/wd4018 /wd4244 /wd4267 /wd4291 /wd4305)
++    # add_compile_options(/wd4018 /wd4244 /wd4267 /wd4291 /wd4305)
+ 
+     set(CompilerFlags
+         CMAKE_CXX_FLAGS
+@@ -172,39 +178,32 @@ if(MSVC)
+ endif()
+ 
+ find_package(CUDAToolkit)
+-find_package(CUDA)
+-if(CUDA_FOUND)
+-    set(CUDA_PROPAGATE_HOST_FLAGS ON)
+-    if(MSVC)
+-        set(KALDI_CUDA_NVCC_FLAGS "--default-stream=per-thread") # Fixes incompatibility with cxx14 and cxx17 for Kaldi vs cuda in VS2019
+-        list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /permissive-,/FS,/wd4819,/EHsc,/bigobj")
+-        list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler /wd4018,/wd4244,/wd4267,/wd4291,/wd4305")
+-        list(APPEND CUDA_NVCC_FLAGS_RELEASE -Xcompiler /MD) # Kaldi will always be dynamically linked to Cuda
+-        list(APPEND CUDA_NVCC_FLAGS_DEBUG -Xcompiler /MDd)
+-    else()
+-    #     list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -std=c++${CMAKE_CXX_STANDARD}")
+-        list(APPEND KALDI_CUDA_NVCC_FLAGS "-Xcompiler -fPIC")
+-        set(KALDI_CUDA_NVCC_FLAGS "--default-stream=per-thread;-std=c++${CMAKE_CXX_STANDARD}")
+-    endif()
++if(CUDAToolkit_FOUND)
++    enable_language(CUDA)
++
+     set(CMAKE_CUDA_STANDARD 17)
+     set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+-    set(CUDA_NVCC_FLAGS ${KALDI_CUDA_NVCC_FLAGS} ${CUDA_NVCC_FLAGS})
+ 
+     add_definitions(-DHAVE_CUDA=1)
+     add_definitions(-DCUDA_API_PER_THREAD_DEFAULT_STREAM=1)
+     link_libraries(
+-        ${CUDA_LIBRARIES}
+-        ${CUDA_CUDA_LIBRARY}
+-        ${CUDA_CUBLAS_LIBRARIES}
+-        ${CUDA_CUFFT_LIBRARIES}
+-        ${CUDA_curand_LIBRARY}
+-        ${CUDA_cusolver_LIBRARY}
+-        ${CUDA_cusparse_LIBRARY})
+-
 -    find_package(NvToolExt REQUIRED)
 -    include_directories(${NvToolExt_INCLUDE_DIR})
 -    link_libraries(${NvToolExt_LIBRARIES})
++        CUDA::cudart
++        CUDA::cublas
++        CUDA::cufft
++        CUDA::curand
++        CUDA::cusolver
++        CUDA::cusparse
++        CUDA::cuda_driver)
+ 
 +    if(MSVC)
 +        # CMake's detection for NvToolExt fails with CUDA 12; it's header-only now, see
 +        # https://github.com/conda-forge/cuda-nvtx-feedstock/issues/4
@@ -67,5 +120,55 @@ index 24cb574a6..ddef518f2 100644
 +        link_libraries(${NvToolExt_LIBRARIES})
 +    endif()
  
- 
      find_package(CUB REQUIRED)
+     include_directories(${CUB_INCLUDE_DIR})
+@@ -270,7 +268,7 @@ if(TENSORFLOW_DIR)
+ endif()
+ 
+ # add all cuda libraries
+-if(CUDA_FOUND)
++if(CUDAToolkit_FOUND)
+     add_subdirectory(src/cudafeat)
+     add_subdirectory(src/cudadecoder)
+ endif()
+@@ -293,7 +291,7 @@ add_subdirectory(src/online2bin)
+ add_subdirectory(src/kwsbin)
+ 
+ # add all cuda executables
+-if(CUDA_FOUND)
++if(CUDAToolkit_FOUND)
+     add_subdirectory(src/cudafeatbin)
+     add_subdirectory(src/cudadecoderbin)
+ endif()
+diff --git a/cmake/gen_cmake_skeleton.py b/cmake/gen_cmake_skeleton.py
+index 154369dd5..163a4dd97 100644
+--- a/cmake/gen_cmake_skeleton.py
++++ b/cmake/gen_cmake_skeleton.py
+@@ -252,13 +252,11 @@ class CMakeListsLibrary(object):
+ 
+         if len(self.cuda_source_list) > 0:
+             self.source_list.append("${CUDA_OBJS}")
+-            ret.append("if(CUDA_FOUND)")
+-            ret.append("    cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)")
+-            ret.append("    cuda_compile(CUDA_OBJS SHARED")
++            ret.append("if(CUDAToolkit_FOUND)")
++            ret.append("    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)")
++            ret.append("    set(CUDA_OBJS")
+             for f in self.cuda_source_list:
+                 ret.append("        " + f)
+-            if self.dir_name.startswith("cudafeat") and sys.platform == 'win32':
+-                ret.append("    OPTIONS -DKALDI_CUMATRIX_DLL_IMPORTS")
+             ret.append("    )")
+             ret.append("endif()\n")
+ 
+@@ -286,6 +284,10 @@ class CMakeListsLibrary(object):
+ 
+             ret.append("target_compile_definitions(" + self.target_name + " INTERFACE KALDI_CUMATRIX_DLL_IMPORTS)")
+ 
++            ret.append("endif(MSVC)\n")
++        elif self.dir_name.startswith("cudafeat"):
++            ret.append("if(MSVC)")
++            ret.append("target_compile_definitions(" + self.target_name + " INTERFACE KALDI_CUMATRIX_DLL_IMPORTS)")
+             ret.append("endif(MSVC)\n")
+         elif self.dir_name.startswith("util"):
+             ret.append("if(MSVC)")
