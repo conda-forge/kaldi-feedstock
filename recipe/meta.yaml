@@ -51,7 +51,7 @@ source:
     - patches/0006-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
 
 build:
-  number: 3
+  number: 4
 
 requirements:
   build:
