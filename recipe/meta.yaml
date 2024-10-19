@@ -50,7 +50,7 @@ source:
     - patches/0005-Shared-libraries-on-windows.patch
     - patches/0006-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
 build:
-  number: 4
+  number: 5
   skip: true  # [cuda_compiler_version == "11.8" and aarch64]
   skip: true  # [cuda_compiler_version == "11.8" and ppc64le]
 
@@ -116,6 +116,7 @@ outputs:
         - magma                     # [cuda_compiler_version != "None"]
         - openfst ==1.8.3
         - ucrt                      # [win]
+        - __cuda >={{ cuda_compiler_version }}  # [(cuda_compiler or "None") != "None"]
     test:
       # will also run run_test.py (checking the binaries)
       commands:
