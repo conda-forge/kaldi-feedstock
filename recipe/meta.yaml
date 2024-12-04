@@ -94,9 +94,6 @@ outputs:
         - libcurand-dev
         # for nvToolsExt.h
         - nvtx-c                    # [win]
-        # we need headers from cuda-nvcc-dev_win-64, e.g. crt/host_defines.h; in later
-        # versions of the toolkit (12.{x>...?}), this shouldn't be necessary anymore
-        - {{ compiler('cuda') }}    # [win]
         {% endif %}
         - icu
         - libblas
