@@ -22,7 +22,7 @@ if "%cuda_compiler_version%"=="None" (
     set MAGMA_HOME=%LIBRARY_PREFIX%
 )
 
-if "%cuda_compiler_version%"=="12.0" (
+if "%cuda_compiler_version:~0,2%"=="12" (
     REM header-only on windows as of CUDA 12, see
     REM https://github.com/conda-forge/cuda-nvtx-feedstock/issues/4
     set "CMAKE_EXTRA=-DNvToolExt_INCLUDE_DIR=%LIBRARY_INC%/nvtx3"

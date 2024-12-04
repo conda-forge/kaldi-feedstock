@@ -50,7 +50,7 @@ source:
     - patches/0005-Shared-libraries-on-windows.patch
     - patches/0006-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
 build:
-  number: 5
+  number: 6
   skip: true  # [cuda_compiler_version == "11.8" and aarch64]
   skip: true  # [cuda_compiler_version == "11.8" and ppc64le]
 
@@ -72,7 +72,7 @@ outputs:
       build:
         - {{ stdlib('c') }}
         - {{ compiler('cxx') }}
-        - {{ compiler('fortran') }}  # [not win]
+        - {{ compiler("fortran") }}
         - {{ compiler('cuda') }}     # [cuda_compiler_version != "None"]
         - cmake
         - ninja
