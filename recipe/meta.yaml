@@ -42,15 +42,8 @@ source:
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
   sha256: b7f6789806e5d8015bfaa1940cebfc5ed59251988f31dd162e2c4382ec523829
   patches:
-    # Patches based on https://github.com/kaldi-asr/kaldi/pull/4829
-    - patches/0001-Support-openfst-1.7.6.patch
-    - patches/0002-Support-openfst-1.8.0.patch
-    - patches/0003-Support-openfst-1.8.1.patch
-    - patches/0004-Support-openfst-1.8.2.patch
-    - patches/0005-Shared-libraries-on-windows.patch
-    - patches/0006-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
-    # backport https://github.com/kaldi-asr/kaldi/pull/4917
-    - patches/0007-Fix-missing-FLT_MAX-in-some-CUDA-installation-scenar.patch
+    - patches/0001-Shared-libraries-on-windows.patch
+    - patches/0002-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
 build:
   number: 0
   skip: true  # [cuda_compiler_version == "11.8" and aarch64]
