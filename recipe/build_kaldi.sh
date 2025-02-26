@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-
+set -ex
 
 export CFLAGS="$(echo $CFLAGS | sed 's/-fvisibility-inlines-hidden//g')"
 export CXXFLAGS="$(echo $CXXFLAGS | sed 's/-fvisibility-inlines-hidden//g')"
@@ -99,6 +99,11 @@ then
       exit 1
   fi
   CMAKE_ARGS="${CMAKE_ARGS} -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR}"
+  if [[ "${cuda_compiler_version}" == 12* ]]; then
+      CMAKE_ARGS="${CMAKE_ARGS} -DNvToolExt_SEARCH_DIRS=${CUDA_TOOLKIT_ROOT_DIR}/include/nvtx3"
+      CMAKE_ARGS="${CMAKE_ARGS} -DNvToolExt_INCLUDE_DIR=${CUDA_TOOLKIT_ROOT_DIR}/include/nvtx3"
+      CMAKE_ARGS="${CMAKE_ARGS} -DNvToolExt_LIBRARIES=${CUDA_TOOLKIT_ROOT_DIR}/lib/libnvToolsExt.so"
+  fi
 else
     echo "==> cuda_compiler_version=${cuda_compiler_version}, disable CUDA support"
 fi
