@@ -1,7 +1,7 @@
-From 1ba65b3758e01a065c36c2dcafd005a4b4d67b1c Mon Sep 17 00:00:00 2001
+From a5eded921a6eef9a8e7f9ebcb39000bf747aa32b Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Wed, 10 May 2023 13:34:32 -0700
-Subject: [PATCH 5/6] Shared libraries on windows
+Subject: [PATCH 5/7] Shared libraries on windows
 
 ---
  CMakeLists.txt                                | 25 +++++++------

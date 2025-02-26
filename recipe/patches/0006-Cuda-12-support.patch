@@ -1,14 +1,15 @@
-From cac58b8101c0d6e6064466d3da967eeba24e4e56 Mon Sep 17 00:00:00 2001
+From eb712c5f5e351b97406f4903fbb9d94021d05a0b Mon Sep 17 00:00:00 2001
 From: Michael McAuliffe <michael.e.mcauliffe@gmail.com>
 Date: Thu, 1 Feb 2024 10:41:44 -0800
-Subject: [PATCH 6/6] Cuda 12 support
+Subject: [PATCH 6/7] Cuda 12 support
 
 ---
- CMakeLists.txt | 26 +++++++++++++++++++-------
- 1 file changed, 19 insertions(+), 7 deletions(-)
+ CMakeLists.txt              | 67 ++++++++++++++++++-------------------
+ cmake/gen_cmake_skeleton.py | 12 ++++---
+ 2 files changed, 40 insertions(+), 39 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 24cb574a6..2428b37a9 100644
+index 24cb574a6..a5c6ff81e 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -122,7 +123,7 @@ index 24cb574a6..2428b37a9 100644
  
      find_package(CUB REQUIRED)
      include_directories(${CUB_INCLUDE_DIR})
-@@ -270,7 +268,7 @@ if(TENSORFLOW_DIR)
+@@ -270,7 +269,7 @@ if(TENSORFLOW_DIR)
  endif()
  
  # add all cuda libraries
@@ -131,7 +132,7 @@ index 24cb574a6..2428b37a9 100644
      add_subdirectory(src/cudafeat)
      add_subdirectory(src/cudadecoder)
  endif()
-@@ -293,7 +291,7 @@ add_subdirectory(src/online2bin)
+@@ -293,7 +292,7 @@ add_subdirectory(src/online2bin)
  add_subdirectory(src/kwsbin)
  
  # add all cuda executables

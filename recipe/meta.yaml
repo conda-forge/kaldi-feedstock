@@ -49,6 +49,8 @@ source:
     - patches/0004-Support-openfst-1.8.2.patch
     - patches/0005-Shared-libraries-on-windows.patch
     - patches/0006-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
+    # backport https://github.com/kaldi-asr/kaldi/pull/4917
+    - patches/0007-Fix-missing-FLT_MAX-in-some-CUDA-installation-scenar.patch
 build:
   number: 6
   skip: true  # [cuda_compiler_version == "11.8" and aarch64]
