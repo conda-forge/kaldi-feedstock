@@ -1,8 +1,8 @@
-{% set version = "5.5.1112" %}
+{% set version = "5.5.1168" %}
 # minor/major is https://github.com/kaldi-asr/kaldi/blob/master/src/.version;
 # patch version is the number of commits since then, see
 # https://github.com/kaldi-asr/kaldi/blob/master/cmake/VersionHelper.cmake
-{% set commit = "8c451e28582f5d91f84ea3d64bb76c794c3b1683" %}
+{% set commit = "01aadd7c19372e3eacadec88caabd86162f33d69" %}
 {% set kaldi_proc_type = "cuda" if cuda_compiler_version != "None" else "cpu" %}
 
 {% set kaldi_libraries = [
@@ -40,7 +40,7 @@ package:
 
 source:
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
-  sha256: ca169b55f21c7a8420b023ad94b17bfcc9bb0c025bacf2ab3330171ab33d7e08
+  sha256: b7f6789806e5d8015bfaa1940cebfc5ed59251988f31dd162e2c4382ec523829
   patches:
     # Patches based on https://github.com/kaldi-asr/kaldi/pull/4829
     - patches/0001-Support-openfst-1.7.6.patch
@@ -52,7 +52,7 @@ source:
     # backport https://github.com/kaldi-asr/kaldi/pull/4917
     - patches/0007-Fix-missing-FLT_MAX-in-some-CUDA-installation-scenar.patch
 build:
-  number: 6
+  number: 0
   skip: true  # [cuda_compiler_version == "11.8" and aarch64]
   skip: true  # [cuda_compiler_version == "11.8" and ppc64le]
 
@@ -105,7 +105,7 @@ outputs:
         - magma                     # [cuda_compiler_version != "None"]
         - pthreads-win32            # [win]
         - zlib
-        - openfst ==1.8.3
+        - openfst ==1.8.4
         - dlfcn-win32               # [win]
       run:
         - libblas
@@ -113,7 +113,7 @@ outputs:
         - liblapack
         - liblapacke
         - magma                     # [cuda_compiler_version != "None"]
-        - openfst ==1.8.3
+        - openfst ==1.8.4
         - ucrt                      # [win]
         - __cuda >={{ cuda_compiler_version }}  # [(cuda_compiler or "None") != "None"]
     test:
