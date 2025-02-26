@@ -1,8 +1,9 @@
 azure:
   free_disk_space: true
   settings_win:
-    pool:
-      vmImage: windows-2019
+    variables:
+      CONDA_BLD_PATH: C:\bld\
+      MINIFORGE_HOME: C:\Miniforge
 build_platform:
   linux_aarch64: linux_64
   linux_ppc64le: linux_64
@@ -13,8 +14,6 @@ conda_forge_output_validation: true
 github:
   branch_name: main
   tooling_branch_name: main
-os_version:
-  linux_64: cos7
 provider:
   win: azure
 test: native_and_emulated

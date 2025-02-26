@@ -49,8 +49,10 @@ source:
     - patches/0004-Support-openfst-1.8.2.patch
     - patches/0005-Shared-libraries-on-windows.patch
     - patches/0006-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
+    # backport https://github.com/kaldi-asr/kaldi/pull/4917
+    - patches/0007-Fix-missing-FLT_MAX-in-some-CUDA-installation-scenar.patch
 build:
-  number: 5
+  number: 6
   skip: true  # [cuda_compiler_version == "11.8" and aarch64]
   skip: true  # [cuda_compiler_version == "11.8" and ppc64le]
 
@@ -72,7 +74,7 @@ outputs:
       build:
         - {{ stdlib('c') }}
         - {{ compiler('cxx') }}
-        - {{ compiler('fortran') }}  # [not win]
+        - {{ compiler("fortran") }}
         - {{ compiler('cuda') }}     # [cuda_compiler_version != "None"]
         - cmake
         - ninja
@@ -94,9 +96,6 @@ outputs:
         - libcurand-dev
         # for nvToolsExt.h
         - nvtx-c                    # [win]
-        # we need headers from cuda-nvcc-dev_win-64, e.g. crt/host_defines.h; in later
-        # versions of the toolkit (12.{x>...?}), this shouldn't be necessary anymore
-        - {{ compiler('cuda') }}    # [win]
         {% endif %}
         - icu
         - libblas
