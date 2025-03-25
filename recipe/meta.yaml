@@ -52,7 +52,7 @@ source:
     # backport https://github.com/kaldi-asr/kaldi/pull/4917
     - patches/0007-Fix-missing-FLT_MAX-in-some-CUDA-installation-scenar.patch
 build:
-  number: 6
+  number: 7
   skip: true  # [cuda_compiler_version == "11.8" and aarch64]
   skip: true  # [cuda_compiler_version == "11.8" and ppc64le]
 
@@ -103,6 +103,7 @@ outputs:
         - liblapack
         - liblapacke
         - magma                     # [cuda_compiler_version != "None"]
+        - nomkl
         - pthreads-win32            # [win]
         - zlib
         - openfst ==1.8.3
