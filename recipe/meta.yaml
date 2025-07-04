@@ -96,6 +96,7 @@ outputs:
         - liblapack
         - liblapacke
         - magma                     # [cuda_compiler_version != "None"]
+        - nomkl
         - pthreads-win32            # [win]
         - zlib
         - openfst ==1.8.4
@@ -108,7 +109,7 @@ outputs:
         - magma                     # [cuda_compiler_version != "None"]
         - openfst ==1.8.4
         - ucrt                      # [win]
-        - __cuda >={{ cuda_compiler_version }}  # [(cuda_compiler or "None") != "None"]
+        - __cuda >={{ cuda_compiler_version }}  # [cuda_compiler_version != "None"]
     test:
       # will also run run_test.py (checking the binaries)
       commands:
