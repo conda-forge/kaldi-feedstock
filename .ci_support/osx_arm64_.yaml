@@ -11,17 +11,17 @@ channel_sources:
 channel_targets:
 - conda-forge main
 cuda_compiler:
-- None
+- cuda-nvcc
 cuda_compiler_version:
 - None
 cxx_compiler:
 - clangxx
 cxx_compiler_version:
-- '18'
+- '19'
 fortran_compiler:
 - gfortran
 fortran_compiler_version:
-- '13'
+- '14'
 icu:
 - '75'
 libblas:
