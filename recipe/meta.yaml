@@ -10,7 +10,7 @@
     "base", "matrix", "cudamatrix", "util", "feat", "tree", "gmm", "transform",
     "fstext", "hmm", "lm", "decoder", "lat", "nnet", "nnet2", "nnet3",
     "rnnlm", "chain", "ivector", "online", "online2", "kws"
-] + (cuda_compiler_version is defined and cuda_compiler_version != "None") * [
+] + (cuda_compiler_version != "None") * [
     "cudafeat", "cudadecoder"
 ]%}
 # This list should be substantially longer, but upstream just globs
@@ -43,18 +43,9 @@ source:
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
   sha256: 139de58f1abbf727fee65e709a8fcc6d8714d5e5596a7eb15491faef1ac73304
   patches:
-    # Patches based on https://github.com/kaldi-asr/kaldi/pull/4829
-    #- patches/0001-Support-openfst-1.7.6.patch
-    #- patches/0002-Support-openfst-1.8.0.patch
-    #- patches/0003-Support-openfst-1.8.1.patch
-    #- patches/0004-Support-openfst-1.8.2.patch
-    - patches/0005-Shared-libraries-on-windows.patch
-    #- patches/0006-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
-    ## backport https://github.com/kaldi-asr/kaldi/pull/4917
-    #- patches/0007-Fix-missing-FLT_MAX-in-some-CUDA-installation-scenar.patch
+    - patches/0001-Shared-libraries-on-windows.patch
 build:
   number: 0
-  skip: true  # [cuda_compiler_version == "11.8" and (aarch64 or ppc64le)]
 
 requirements:
   build:
@@ -82,7 +73,7 @@ outputs:
         - libtool   # [not win]
         - automake  # [not win]
       host:
-        {% if cuda_major >= 12 %}
+        {% if cuda_compiler_version != "None" %}
         - cuda-version {{ cuda_compiler_version }}
         - cuda-cudart-dev
         - cuda-driver-dev           # [linux]
