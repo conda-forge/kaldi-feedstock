@@ -73,7 +73,7 @@ outputs:
         - libtool   # [not win]
         - automake  # [not win]
       host:
-        {% if cuda_compiler_version != "None" %}
+        {% if cuda_major >= 12 %}
         - cuda-version {{ cuda_compiler_version }}
         - cuda-cudart-dev
         - cuda-driver-dev           # [linux]
@@ -107,7 +107,6 @@ outputs:
         - magma                     # [cuda_compiler_version != "None"]
         - openfst ==1.8.4
         - ucrt                      # [win]
-        - __cuda >={{ cuda_compiler_version }}  # [cuda_compiler_version != "None"]
     test:
       # will also run run_test.py (checking the binaries)
       commands:
