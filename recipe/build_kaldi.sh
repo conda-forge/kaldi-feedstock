@@ -84,19 +84,18 @@ then
   # Point CMake to CUDA Toolkit. Use `targets` directories with CUDA 12+
   if [[ "${cuda_compiler_version}" == 11* ]]
   then
-      CUDA_TOOLKIT_ROOT_DIR="${CUDA_HOME}"
+      export CUDA_TOOLKIT_ROOT_DIR="${CUDA_HOME}"
   elif [[ "${target_platform}" == "linux-64" ]]
   then
-      CUDA_TOOLKIT_ROOT_DIR="${PREFIX}/targets/x86_64-linux"
-  elif [[ "${target_platform}" == "linux-aarch64" ]]
-  then
-      CUDA_TOOLKIT_ROOT_DIR="${PREFIX}/targets/sbsa-linux"
-  elif [[ "${target_platform}" == "linux-ppc64le" ]]
-  then
-      CUDA_TOOLKIT_ROOT_DIR="${PREFIX}/targets/ppc64le-linux"
+      export CUDA_TOOLKIT_ROOT_DIR="${PREFIX}"
+      export CUDA_HOME="${PREFIX}"
   else
       echo "Unknown CUDA version ${cuda_compiler_version} for target platform ${target_platform}"
       exit 1
+  fi
+
+  if [[ "${target_platform}" != "${build_platform}" ]]; then
+    export CUDA_TOOLKIT_ROOT=${PREFIX}
   fi
   CMAKE_ARGS="${CMAKE_ARGS} -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR}"
   if [[ "${cuda_compiler_version}" == 12* ]]; then
