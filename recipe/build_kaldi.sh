@@ -97,6 +97,7 @@ then
   if [[ "${target_platform}" != "${build_platform}" ]]; then
     export CUDA_TOOLKIT_ROOT=${PREFIX}
   fi
+  find "${CUDA_TOOLKIT_ROOT_DIR}" -name "libnvToolsExt.so"
   CMAKE_ARGS="${CMAKE_ARGS} -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR}"
   if [[ "${cuda_compiler_version}" == 12* ]]; then
       CMAKE_ARGS="${CMAKE_ARGS} -DNvToolExt_SEARCH_DIRS=${CUDA_TOOLKIT_ROOT_DIR}/include/nvtx3"
