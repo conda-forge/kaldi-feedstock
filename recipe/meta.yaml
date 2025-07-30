@@ -1,8 +1,9 @@
-{% set version = "5.5.1112" %}
+{% set version = "5.5.1162" %}
 # minor/major is https://github.com/kaldi-asr/kaldi/blob/master/src/.version;
 # patch version is the number of commits since then, see
 # https://github.com/kaldi-asr/kaldi/blob/master/cmake/VersionHelper.cmake
-{% set commit = "8c451e28582f5d91f84ea3d64bb76c794c3b1683" %}
+{% set commit = "f4007661023b98b8081fd875029f0dee62242fd1" %}
+{% set cuda_compiler_version = "None" if cuda_compiler_version is undefined %}
 {% set kaldi_proc_type = "cuda" if cuda_compiler_version != "None" else "cpu" %}
 
 {% set kaldi_libraries = [
@@ -40,21 +41,20 @@ package:
 
 source:
   url: https://github.com/kaldi-asr/kaldi/archive/{{ commit }}.tar.gz
-  sha256: ca169b55f21c7a8420b023ad94b17bfcc9bb0c025bacf2ab3330171ab33d7e08
+  sha256: 139de58f1abbf727fee65e709a8fcc6d8714d5e5596a7eb15491faef1ac73304
   patches:
     # Patches based on https://github.com/kaldi-asr/kaldi/pull/4829
-    - patches/0001-Support-openfst-1.7.6.patch
-    - patches/0002-Support-openfst-1.8.0.patch
-    - patches/0003-Support-openfst-1.8.1.patch
-    - patches/0004-Support-openfst-1.8.2.patch
+    #- patches/0001-Support-openfst-1.7.6.patch
+    #- patches/0002-Support-openfst-1.8.0.patch
+    #- patches/0003-Support-openfst-1.8.1.patch
+    #- patches/0004-Support-openfst-1.8.2.patch
     - patches/0005-Shared-libraries-on-windows.patch
-    - patches/0006-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
-    # backport https://github.com/kaldi-asr/kaldi/pull/4917
-    - patches/0007-Fix-missing-FLT_MAX-in-some-CUDA-installation-scenar.patch
+    #- patches/0006-Cuda-12-support.patch  # [(cuda_compiler_version or "").startswith("12")]
+    ## backport https://github.com/kaldi-asr/kaldi/pull/4917
+    #- patches/0007-Fix-missing-FLT_MAX-in-some-CUDA-installation-scenar.patch
 build:
-  number: 9
-  skip: true  # [cuda_compiler_version == "11.8" and aarch64]
-  skip: true  # [cuda_compiler_version == "11.8" and ppc64le]
+  number: 0
+  skip: true  # [cuda_compiler_version == "11.8" and (aarch64 or ppc64le)]
 
 requirements:
   build:
@@ -106,7 +106,7 @@ outputs:
         - nomkl
         - pthreads-win32            # [win]
         - zlib
-        - openfst ==1.8.3
+        - openfst ==1.8.4
         - dlfcn-win32               # [win]
       run:
         - libblas
@@ -114,7 +114,7 @@ outputs:
         - liblapack
         - liblapacke
         - magma                     # [cuda_compiler_version != "None"]
-        - openfst ==1.8.3
+        - openfst ==1.8.4
         - ucrt                      # [win]
         - __cuda >={{ cuda_compiler_version }}  # [cuda_compiler_version != "None"]
     test:
