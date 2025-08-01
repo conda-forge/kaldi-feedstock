@@ -84,11 +84,16 @@ then
   # Point CMake to CUDA Toolkit. Use `targets` directories with CUDA 12+
   if [[ "${cuda_compiler_version}" == 11* ]]
   then
-      export CUDA_TOOLKIT_ROOT_DIR="${CUDA_HOME}"
+      CUDA_TOOLKIT_ROOT_DIR="${CUDA_HOME}"
   elif [[ "${target_platform}" == "linux-64" ]]
   then
-      export CUDA_TOOLKIT_ROOT_DIR="${PREFIX}"
-      export CUDA_HOME="${PREFIX}"
+      CUDA_TOOLKIT_ROOT_DIR="${PREFIX}/targets/x86_64-linux"
+  elif [[ "${target_platform}" == "linux-aarch64" ]]
+  then
+      CUDA_TOOLKIT_ROOT_DIR="${PREFIX}/targets/sbsa-linux"
+  elif [[ "${target_platform}" == "linux-ppc64le" ]]
+  then
+      CUDA_TOOLKIT_ROOT_DIR="${PREFIX}/targets/ppc64le-linux"
   else
       echo "Unknown CUDA version ${cuda_compiler_version} for target platform ${target_platform}"
       exit 1
@@ -97,7 +102,8 @@ then
   if [[ "${target_platform}" != "${build_platform}" ]]; then
     export CUDA_TOOLKIT_ROOT=${PREFIX}
   fi
-  find "${CUDA_TOOLKIT_ROOT_DIR}" -name "libnvToolsExt.so"
+  find "${CUDA_TOOLKIT_ROOT_DIR}" -print | grep -i "libnvToolsExt.so"
+  find "${PREFIX}" -print | grep -i "libnvToolsExt.so"
   CMAKE_ARGS="${CMAKE_ARGS} -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR}"
   if [[ "${cuda_compiler_version}" == 12* ]]; then
       CMAKE_ARGS="${CMAKE_ARGS} -DNvToolExt_SEARCH_DIRS=${CUDA_TOOLKIT_ROOT_DIR}/include/nvtx3"
