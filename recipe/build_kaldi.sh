@@ -98,6 +98,11 @@ then
       echo "Unknown CUDA version ${cuda_compiler_version} for target platform ${target_platform}"
       exit 1
   fi
+
+  if [[ "${target_platform}" != "${build_platform}" ]]; then
+    export CUDA_TOOLKIT_ROOT=${PREFIX}
+  fi
+
   CMAKE_ARGS="${CMAKE_ARGS} -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR}"
   if [[ "${cuda_compiler_version}" == 12* ]]; then
       CMAKE_ARGS="${CMAKE_ARGS} -DNvToolExt_SEARCH_DIRS=${CUDA_TOOLKIT_ROOT_DIR}/include/nvtx3"
