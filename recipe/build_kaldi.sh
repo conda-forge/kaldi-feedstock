@@ -82,10 +82,7 @@ if [[ ! -z "${cuda_compiler_version+x}" && "${cuda_compiler_version}" != "None" 
 then
     echo "==> cuda_compiler_version=${cuda_compiler_version}, use CMake's CUDA support"
   # Point CMake to CUDA Toolkit. Use `targets` directories with CUDA 12+
-  if [[ "${cuda_compiler_version}" == 11* ]]
-  then
-      CUDA_TOOLKIT_ROOT_DIR="${CUDA_HOME}"
-  elif [[ "${target_platform}" == "linux-64" ]]
+  if [[ "${target_platform}" == "linux-64" ]]
   then
       CUDA_TOOLKIT_ROOT_DIR="${PREFIX}/targets/x86_64-linux"
   elif [[ "${target_platform}" == "linux-aarch64" ]]
@@ -94,9 +91,6 @@ then
   elif [[ "${target_platform}" == "linux-ppc64le" ]]
   then
       CUDA_TOOLKIT_ROOT_DIR="${PREFIX}/targets/ppc64le-linux"
-  else
-      echo "Unknown CUDA version ${cuda_compiler_version} for target platform ${target_platform}"
-      exit 1
   fi
 
   if [[ "${target_platform}" != "${build_platform}" ]]; then
@@ -104,11 +98,9 @@ then
   fi
 
   CMAKE_ARGS="${CMAKE_ARGS} -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR}"
-  if [[ "${cuda_compiler_version}" == 12* ]]; then
-      CMAKE_ARGS="${CMAKE_ARGS} -DNvToolExt_SEARCH_DIRS=${CUDA_TOOLKIT_ROOT_DIR}/include/nvtx3"
-      CMAKE_ARGS="${CMAKE_ARGS} -DNvToolExt_INCLUDE_DIR=${CUDA_TOOLKIT_ROOT_DIR}/include/nvtx3"
-      CMAKE_ARGS="${CMAKE_ARGS} -DNvToolExt_LIBRARIES=${CUDA_TOOLKIT_ROOT_DIR}/lib/libnvToolsExt.so"
-  fi
+  CMAKE_ARGS="${CMAKE_ARGS} -DNvToolExt_SEARCH_DIRS=${CUDA_TOOLKIT_ROOT_DIR}/include/nvtx3"
+  CMAKE_ARGS="${CMAKE_ARGS} -DNvToolExt_INCLUDE_DIR=${CUDA_TOOLKIT_ROOT_DIR}/include/nvtx3"
+  CMAKE_ARGS="${CMAKE_ARGS} -DNvToolExt_LIBRARIES=${CUDA_TOOLKIT_ROOT_DIR}/lib/libnvToolsExt.so"
 else
     echo "==> cuda_compiler_version=${cuda_compiler_version}, disable CUDA support"
 fi
