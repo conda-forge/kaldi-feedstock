@@ -73,7 +73,7 @@ outputs:
         - libtool   # [not win]
         - automake  # [not win]
       host:
-        {% if cuda_major >= 12 %}
+        {% if cuda_compiler_version != "None" %}
         - cuda-version {{ cuda_compiler_version }}
         - cuda-cudart-dev
         - cuda-driver-dev           # [linux]
