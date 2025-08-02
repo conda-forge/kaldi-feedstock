@@ -3,7 +3,7 @@
 # patch version is the number of commits since then, see
 # https://github.com/kaldi-asr/kaldi/blob/master/cmake/VersionHelper.cmake
 {% set commit = "f4007661023b98b8081fd875029f0dee62242fd1" %}
-{% set cuda_compiler_version = "None" if cuda_compiler_version is undefined %}
+{% set cuda_compiler_version = "None" if cuda_compiler_version is undefined else cuda_compiler_version %}
 {% set kaldi_proc_type = "cuda" if cuda_compiler_version != "None" else "cpu" %}
 
 {% set kaldi_libraries = [
