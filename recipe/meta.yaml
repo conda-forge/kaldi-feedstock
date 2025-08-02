@@ -39,7 +39,7 @@ source:
   patches:
     - patches/0001-Shared-libraries-on-windows.patch
 build:
-  number: 0
+  number: 1
 
 requirements:
   build:
