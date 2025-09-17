@@ -1,0 +1,32 @@
+c_stdlib:
+- vs
+channel_sources:
+- conda-forge
+channel_targets:
+- conda-forge main
+cuda_compiler:
+- cuda-nvcc
+cuda_compiler_version:
+- '13.0'
+cxx_compiler:
+- vs2022
+fortran_compiler:
+- flang
+fortran_compiler_version:
+- '19'
+icu:
+- '75'
+libblas:
+- 3.9.* *netlib
+libcblas:
+- 3.9.* *netlib
+liblapack:
+- 3.9.* *netlib
+liblapacke:
+- 3.9.* *netlib
+magma:
+- '2.9'
+target_platform:
+- win-64
+zlib:
+- '1'
