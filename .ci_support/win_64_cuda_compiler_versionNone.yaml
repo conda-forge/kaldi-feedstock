@@ -24,7 +24,7 @@ liblapack:
 - 3.9.* *netlib
 liblapacke:
 - 3.9.* *netlib
-magma:
+libmagma_devel:
 - '2.9'
 target_platform:
 - win-64
